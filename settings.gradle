@@ -1,0 +1,12 @@
+rootProject.name = 'widow'
+
+include 'widow-core'
+
+include 'widow-analyze'
+
+include 'widow-fetch'
+
+include 'widow-index'
+
+include 'widow-parse'
+

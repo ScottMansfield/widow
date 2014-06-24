@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/widow.iml" filepath="$PROJECT_DIR$/widow.iml" />
+      <module fileurl="file://$PROJECT_DIR$/widow-analyze/widow-analyze.iml" filepath="$PROJECT_DIR$/widow-analyze/widow-analyze.iml" />
+      <module fileurl="file://$PROJECT_DIR$/widow-core/widow-core.iml" filepath="$PROJECT_DIR$/widow-core/widow-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/widow-fetch/widow-fetch.iml" filepath="$PROJECT_DIR$/widow-fetch/widow-fetch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/widow-index/widow-index.iml" filepath="$PROJECT_DIR$/widow-index/widow-index.iml" />
+      <module fileurl="file://$PROJECT_DIR$/widow-parse/widow-parse.iml" filepath="$PROJECT_DIR$/widow-parse/widow-parse.iml" />
+    </modules>
+  </component>
+</project>
+
