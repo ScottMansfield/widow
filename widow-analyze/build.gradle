@@ -1,4 +1,3 @@
 
 dependencies {
-    compile group: 'javax.inject', name: 'inject', version: '1'
 }
