@@ -24,10 +24,6 @@ subprojects {
         // yolo
         compile 'com.amazonaws:aws-java-sdk:1.9.25'
 
-        // All projects besides core depend on core
-        // I guess core depends on core too
-        compile project(':core')
-
         // Test dependencies (unit test / mocking)
         testCompile 'junit:junit:4.12'
         testCompile 'org.powermock:powermock-api-easymock:1.6.1'

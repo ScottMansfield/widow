@@ -1,4 +1,6 @@
 
 dependencies {
+    compile project(':widow-core')
+
     compile 'org.jsoup:jsoup:1.8.1'
 }
