@@ -1,19 +1,16 @@
 package com.widowcrawler.core;
 
+import com.amazonaws.services.sqs.AmazonSQSClient;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 /**
  * @author Scott Mansfield
  */
-public class WorkerProvider implements Provider<Worker> {
+public abstract class WorkerProvider implements Provider<Worker> {
 
-    // @Inject
-    // inject something wrapping the sqs client
+    @Inject
+    protected AmazonSQSClient sqsClient;
 
-    @Override
-    public Worker get() {
-        // return a worker wrapping the message and raring to do some work
-        return null;
-    }
 }
