@@ -13,12 +13,25 @@ subprojects {
     }
 
     dependencies {
+        // Dependency injection dependencies (injected)
         compile 'javax.inject:javax.inject:1'
 
+        // Jackson for JSON
         compile 'com.fasterxml.jackson.core:jackson-core:2.5.1'
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.5.1'
         compile 'com.fasterxml.jackson.core:jackson-databind:2.5.1'
 
+        // yolo
+        compile 'com.amazonaws:aws-java-sdk:1.9.25'
+
+        // All projects besides core depend on core
+        // I guess core depends on core too
+        compile project(':core')
+
+        // Test dependencies (unit test / mocking)
         testCompile 'junit:junit:4.12'
+        testCompile 'org.powermock:powermock-api-easymock:1.6.1'
+        testCompile 'org.easymock:easymock:3.3.1'
+        testCompile 'org.apache.commons:commons-lang3:3.3.2'
     }
 }
