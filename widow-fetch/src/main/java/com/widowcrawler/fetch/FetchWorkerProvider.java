@@ -3,8 +3,8 @@ package com.widowcrawler.fetch;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.widowcrawler.core.Worker;
-import com.widowcrawler.core.WorkerProvider;
+import com.widowcrawler.core.worker.Worker;
+import com.widowcrawler.core.worker.WorkerProvider;
 
 /**
  * @author Scott Mansfield

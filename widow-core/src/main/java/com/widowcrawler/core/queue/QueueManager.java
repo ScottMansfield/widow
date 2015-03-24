@@ -53,5 +53,6 @@ public class QueueManager {
         return messagesMap.get(queueName).poll();
     }
 
-    public
+    // TODO: enqueue function with generic ability to split metadata and message body if too large
+    // too large being configurable and the splitting being optional(?)
 }

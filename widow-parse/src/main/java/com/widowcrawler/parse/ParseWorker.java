@@ -1,21 +1,30 @@
 package com.widowcrawler.parse;
 
-import com.widowcrawler.core.Worker;
+import com.widowcrawler.core.worker.Worker;
+import com.widowcrawler.parse.model.ParseInput;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * @author Scott Mansfield
  */
 public class ParseWorker implements Worker {
 
-    // some sort of message needs to be input in the constructor
-    private String htmlContent;
+    private ParseInput parseInput;
 
-    public ParseWorker(String htmlContent) {
-        this.htmlContent = htmlContent;
+    public ParseWorker(ParseInput parseInput) {
+        this.parseInput = parseInput;
     }
 
     @Override
     public void run() {
-        // magic
+        // magic!
+
+        Document document = Jsoup.parse(this.parseInput.getPageContent());
+
+        String title = document.title();
+        double loadTimeMilliseconds = parseInput.getLoadTimeMilliseconds();
+        int responseSizeBytes = parseInput.getResponseSizeBytes();
+        int pageContentSize = parseInput.getPageContent().length();
     }
 }

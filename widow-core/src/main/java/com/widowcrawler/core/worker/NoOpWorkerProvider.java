@@ -1,7 +1,5 @@
 package com.widowcrawler.core.worker;
 
-import com.widowcrawler.core.Worker;
-
 /**
  * @author Scott Mansfield
  */

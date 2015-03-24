@@ -1,11 +1,12 @@
 package com.widowcrawler.core;
 
+import com.widowcrawler.core.dispatch.Dispatcher;
+import com.widowcrawler.core.worker.Worker;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
 
 import javax.inject.Provider;
 import java.util.concurrent.ExecutorService;
