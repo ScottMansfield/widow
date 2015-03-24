@@ -1,6 +1,7 @@
-package com.widowcrawler.core;
+package com.widowcrawler.core.worker;
 
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.widowcrawler.core.worker.Worker;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

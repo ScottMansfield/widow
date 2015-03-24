@@ -1,4 +1,4 @@
-package com.widowcrawler.core;
+package com.widowcrawler.core.worker;
 
 /**
  * @author Scott Mansfield

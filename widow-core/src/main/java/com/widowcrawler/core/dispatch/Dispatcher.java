@@ -1,4 +1,6 @@
-package com.widowcrawler.core;
+package com.widowcrawler.core.dispatch;
+
+import com.widowcrawler.core.worker.Worker;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

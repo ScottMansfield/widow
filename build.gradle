@@ -21,6 +21,10 @@ subprojects {
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.5.1'
         compile 'com.fasterxml.jackson.core:jackson-databind:2.5.1'
 
+        // Date/time
+        compile 'joda-time:joda-time:2.7'
+        compile 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.5.1'
+
         // yolo
         compile 'com.amazonaws:aws-java-sdk:1.9.25'
 
