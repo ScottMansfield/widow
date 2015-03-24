@@ -24,6 +24,9 @@ subprojects {
         // yolo
         compile 'com.amazonaws:aws-java-sdk:1.9.25'
 
+        // Apache Utils
+        compile 'org.apache.commons:commons-lang3:3.3.2'
+
         // Test dependencies (unit test / mocking)
         testCompile 'junit:junit:4.12'
         testCompile 'org.powermock:powermock-api-easymock:1.6.1'
