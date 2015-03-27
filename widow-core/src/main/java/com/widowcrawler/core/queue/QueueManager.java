@@ -2,10 +2,10 @@ package com.widowcrawler.core.queue;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.model.Message;
+import com.netflix.governator.annotations.AutoBindSingleton;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author Scott Mansfield
  */
-@Singleton
+@AutoBindSingleton
 public class QueueManager {
 
     @Inject

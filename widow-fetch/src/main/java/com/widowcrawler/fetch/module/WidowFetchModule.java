@@ -3,7 +3,7 @@ package com.widowcrawler.fetch.module;
 import com.google.inject.AbstractModule;
 import com.netflix.governator.annotations.Modules;
 import com.widowcrawler.core.module.WidowCoreModule;
-import com.widowcrawler.core.worker.Worker;
+import com.widowcrawler.core.worker.WorkerProvider;
 import com.widowcrawler.fetch.FetchWorkerProvider;
 
 /**
@@ -13,6 +13,6 @@ import com.widowcrawler.fetch.FetchWorkerProvider;
 public class WidowFetchModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(Worker.class).toProvider(FetchWorkerProvider.class);
+        bind(WorkerProvider.class).to(FetchWorkerProvider.class).asEagerSingleton();
     }
 }

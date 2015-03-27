@@ -2,6 +2,7 @@ package com.widowcrawler.core;
 
 import com.widowcrawler.core.dispatch.Dispatcher;
 import com.widowcrawler.core.worker.Worker;
+import com.widowcrawler.core.worker.WorkerProvider;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 public class DispatcherTest {
 
     private Dispatcher dispatcher;
-    private Provider<Worker> workerProviderMock;
+    private WorkerProvider workerProviderMock;
     private ExecutorService executorServiceMock;
 
     @Before
@@ -25,7 +26,7 @@ public class DispatcherTest {
     public void before() throws Exception {
         this.dispatcher = new Dispatcher();
 
-        workerProviderMock = createMock(Provider.class);
+        workerProviderMock = createMock(WorkerProvider.class);
         FieldUtils.writeField(this.dispatcher, "workerProvider", workerProviderMock, true);
 
         executorServiceMock = createMock(ExecutorService.class);

@@ -23,7 +23,7 @@ public class ParseWorker implements Worker {
         Document document = Jsoup.parse(this.parseInput.getPageContent());
 
         String title = document.title();
-        double loadTimeMilliseconds = parseInput.getLoadTimeMilliseconds();
+        double loadTimeMilliseconds = parseInput.getLoadTimeMillis();
         int responseSizeBytes = parseInput.getResponseSizeBytes();
         int pageContentSize = parseInput.getPageContent().length();
     }

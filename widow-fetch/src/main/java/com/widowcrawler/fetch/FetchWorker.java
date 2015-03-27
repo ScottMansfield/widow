@@ -46,9 +46,7 @@ public class FetchWorker implements Worker {
         MultivaluedHashMap<String, String> stringHeaders = (MultivaluedHashMap<String, String>) response.getStringHeaders();
         Map<String, List<String>> headerMap = new HashMap<>(stringHeaders.keySet().size());
 
-        for (String key : stringHeaders.keySet()) {
-            headerMap.put(key, stringHeaders.get(key));
-        }
+        stringHeaders.keySet().forEach( key -> headerMap.put(key, stringHeaders.get(key)) );
 
         ParseInput parseInput = new ParseInput.Builder()
                 .withPageContent(response.getEntity().toString())

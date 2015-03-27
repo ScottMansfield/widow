@@ -8,4 +8,4 @@ dependencies {
 
 }
 
-mainClassName = 'com.widowcrawler.core.Main'
+mainClassName = 'com.widowcrawler.fetch.Main'

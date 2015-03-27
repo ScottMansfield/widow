@@ -3,16 +3,11 @@ package com.widowcrawler.core.worker;
 /**
  * @author Scott Mansfield
  */
-public class NoOpWorkerProvider {
+public class NoOpWorkerProvider extends WorkerProvider {
 
-    private class NoOpWorker implements Worker {
-        @Override
-        public void run() {
-            // do nothing
-        }
-    }
+    private static final Worker noOp = () -> { };
 
     public Worker get() {
-        return new NoOpWorker();
+        return noOp;
     }
 }
