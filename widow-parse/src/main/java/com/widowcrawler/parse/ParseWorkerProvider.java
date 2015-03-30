@@ -1,9 +1,9 @@
 package com.widowcrawler.parse;
 
-import com.amazonaws.services.sqs.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.widowcrawler.core.worker.NoOpWorkerProvider;
+import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.worker.NoOpWorkerProvider;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
 import com.widowcrawler.parse.model.ParseInput;
