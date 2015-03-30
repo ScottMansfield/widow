@@ -1,5 +1,6 @@
 package com.widowcrawler.fetch;
 
+import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.queue.QueueManager;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.parse.model.ParseInput;
@@ -25,9 +26,7 @@ public class FetchWorker implements Worker {
 
     private String target;
 
-    public FetchWorker() { }
-
-    public void setTarget(String target) {
+    public FetchWorker(String target) {
         this.target = target;
     }
 
@@ -60,5 +59,6 @@ public class FetchWorker implements Worker {
 
         // TODO: enqueue, with option to break apart page body from metadata
         // background: sqs data size limits will eff up your day if your page is > ~255kb
+        // then... cry
     }
 }
