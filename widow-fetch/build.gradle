@@ -5,7 +5,7 @@ dependencies {
     compile project(':widow-parse')
 
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
-
 }
 
 mainClassName = 'com.widowcrawler.fetch.Main'
+applicationDefaultJvmArgs = ["-Dcom.widowcrawler.queues=widow-fetch"]
