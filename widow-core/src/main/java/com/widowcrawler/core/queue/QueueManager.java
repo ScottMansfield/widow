@@ -1,16 +1,20 @@
 package com.widowcrawler.core.queue;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author Scott Mansfield
@@ -18,39 +22,117 @@ import java.util.concurrent.ConcurrentMap;
 @AutoBindSingleton
 public class QueueManager {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     @Inject
     private AmazonSQSAsyncClient sqsClient;
 
-    private final Map<String, ConcurrentLinkedQueue<Message>> messagesMap;
+    private Map<String, ConcurrentLinkedQueue<Message>> messagesMap = null;
+    private Map<String, String> queueUrls = null;
 
-    public QueueManager() {
+    private ExecutorService executorService = null;
+    private Queue<Future<SendMessageResult>> enqueueActions = null;
+
+    private Runnable enququer = () -> {
+        Future<SendMessageResult> future = enqueueActions.poll();
+
+        try {
+            SendMessageResult result = future.get();
+        } catch (InterruptedException e) {
+            logger.error("Enqueuer interrupted", e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            // eat the error, because wtf else
+            logger.error("Enqueueing failed", e.getCause());
+        }
+    };
+
+    private Runnable messagePoller = () -> {
+
+        // if < 10 messages already in queue && no in-progress fetch, fetch
+        // else no
+
+        for (Map.Entry<String, String> entry : queueUrls.entrySet()) {
+            String queueName = entry.getKey();
+            String queueUrl = entry.getValue();
+
+            if (messagesMap.get(queueName).size() < 10) {
+                // pull new messages
+                List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
+
+                // Convert Amazon SQS message to our abstract message type
+                for (com.amazonaws.services.sqs.model.Message message : messages) {
+                    Message genericMessage = new Message(message.getBody());
+                    messagesMap.get(queueName).offer(genericMessage);
+                }
+            }
+        }
+    };
+
+    public QueueManager() { }
+
+    @PostConstruct
+    public void postConstruct() {
         // configuration ftw
         // for each configured queue set up the data structure to manage the current message batch
         // async fetch messages
         // still need a better story around credentials for the sqs client
         // Also should probably have a custom message type so we can support local in-memory queues as well as SQS
 
-        String[] queues = StringUtils.split(System.getProperty("com.widowcrawler.queues"), "| ");
+        String queuesProperty = System.getProperty("com.widowcrawler.queues");
+        Validate.notEmpty(queuesProperty);
 
-        ConcurrentMap<String, ConcurrentLinkedQueue<Message>> tempMap = new ConcurrentHashMap<>();
+        String[] queues = StringUtils.split(queuesProperty, "| ");
 
-        if (queues != null) {
-            for (String queue : queues) {
-                tempMap.put(queue, new ConcurrentLinkedQueue<Message>());
+        // Initialize the message and queue URLs
+        Map<String, ConcurrentLinkedQueue<Message>> tempMessagesMap = new HashMap<>(queues.length);
+        Map<String, String> tempQueueUrls = new HashMap<>(queues.length);
+
+        for (String queue : queues) {
+            queue = StringUtils.trim(queue);
+            String queueUrl;
+
+            try {
+                queueUrl = sqsClient.getQueueUrl(queue).getQueueUrl();
+            } catch (QueueDoesNotExistException ex) {
+                queueUrl = sqsClient.createQueue(queue).getQueueUrl();
             }
+
+            tempMessagesMap.put(queue, new ConcurrentLinkedQueue<>());
+            tempQueueUrls.put(queue, queueUrl);
         }
 
-        messagesMap = Collections.unmodifiableMap(tempMap);
+        messagesMap = Collections.unmodifiableMap(tempMessagesMap);
+        queueUrls = Collections.unmodifiableMap(tempQueueUrls);
+
+        // And finally initialize the enqueue actions pending
+        enqueueActions = new ConcurrentLinkedQueue<>();
+
+        // Start the async operations
+        executorService = Executors.newFixedThreadPool(queues.length + 1);
+        executorService.submit(messagePoller);
+        executorService.submit(enququer);
     }
 
     /**
-     * Gets the next message in the queue, or <i>null</i> for the
+     * Gets the next message in the queue, or <i>null</i> for queues with no ready messages
      *
-     * @param queueName
-     * @return
+     * @param queueName the name of the queue
+     * @return the mext message in the queue
      */
     public Message nextMessage(String queueName) {
-        return messagesMap.get(queueName).poll();
+        if (messagesMap.get(queueName) != null) {
+            return messagesMap.get(queueName).poll();
+        }
+
+        return null;
+    }
+
+    public void enqueue(String queueName, String messageBody) {
+        SendMessageRequest sendMessageRequest = new SendMessageRequest(queueName, messageBody);
+        Future<SendMessageResult> resultFuture = sqsClient.sendMessageAsync(sendMessageRequest);
+
+        enqueueActions.add(resultFuture);
     }
 
     // TODO: enqueue function with generic ability to split metadata and message body if too large
