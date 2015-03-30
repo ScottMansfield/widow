@@ -4,6 +4,8 @@ import com.netflix.governator.annotations.AutoBindSingleton;
 import com.widowcrawler.core.worker.ExitWorkerProvider;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -15,6 +17,9 @@ import java.util.concurrent.ExecutorService;
  */
 @AutoBindSingleton
 public class Dispatcher {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     // pull from queue, send to executor
     // the specific worker runnable will be dictated by the injection config
     // The Worker interface implementation will dictate what work gets done
@@ -26,7 +31,9 @@ public class Dispatcher {
     ExecutorService executor;
 
     public boolean dispatch() {
+        logger.info("Pre worker.get() | workerProvider.getClass() = " + workerProvider.getClass().toString());
         Worker worker = workerProvider.get();
+        logger.info("Post worker.get()");
 
         if (worker == ExitWorkerProvider.EXIT_SIGNAL) {
             return false;
