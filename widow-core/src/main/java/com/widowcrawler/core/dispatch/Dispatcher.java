@@ -31,9 +31,9 @@ public class Dispatcher {
     ExecutorService executor;
 
     public boolean dispatch() {
-        logger.info("Pre worker.get() | workerProvider.getClass() = " + workerProvider.getClass().toString());
+        logger.info("Pre workerProvider.get()");
         Worker worker = workerProvider.get();
-        logger.info("Post worker.get()");
+        logger.info("Post workerProvider.get()");
 
         if (worker == ExitWorkerProvider.EXIT_SIGNAL) {
             return false;

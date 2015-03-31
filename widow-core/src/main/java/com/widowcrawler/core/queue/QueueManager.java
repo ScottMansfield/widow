@@ -1,7 +1,6 @@
 package com.widowcrawler.core.queue;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
@@ -12,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.*;
@@ -34,38 +34,59 @@ public class QueueManager {
     private Queue<Future<SendMessageResult>> enqueueActions = null;
 
     private Runnable enququer = () -> {
-        Future<SendMessageResult> future = enqueueActions.poll();
 
-        try {
-            SendMessageResult result = future.get();
-        } catch (InterruptedException e) {
-            logger.error("Enqueuer interrupted", e);
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            // eat the error, because wtf else
-            logger.error("Enqueueing failed", e.getCause());
+        // TODO: Impose some sort of limit on the number of retries per message
+
+        //noinspection InfiniteLoopStatement
+        while (true) {
+            Future<SendMessageResult> future = null;
+
+            while (future == null) {
+                future = enqueueActions.poll();
+
+                if (future == null) {
+                    Thread.yield();
+                }
+            }
+
+            try {
+                SendMessageResult result = future.get();
+                logger.info("Message enqueued successfully. Message ID: " + result.getMessageId());
+
+            } catch (InterruptedException e) {
+                logger.error("Enqueuer interrupted", e);
+                Thread.currentThread().interrupt();
+
+            } catch (ExecutionException e) {
+                // eat the error, because wtf else
+                logger.error("Enqueueing failed", e.getCause());
+            }
         }
     };
 
     private Runnable messagePoller = () -> {
-
         // if < 10 messages already in queue && no in-progress fetch, fetch
         // else no
 
-        for (Map.Entry<String, String> entry : queueUrls.entrySet()) {
-            String queueName = entry.getKey();
-            String queueUrl = entry.getValue();
+        //noinspection InfiniteLoopStatement
+        while (true) {
+            for (Map.Entry<String, String> entry : queueUrls.entrySet()) {
+                String queueName = entry.getKey();
+                String queueUrl = entry.getValue();
 
-            if (messagesMap.get(queueName).size() < 10) {
-                // pull new messages
-                List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
+                if (messagesMap.get(queueName).size() < 1) {
+                    // pull new messages
+                    List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
 
-                // Convert Amazon SQS message to our abstract message type
-                for (com.amazonaws.services.sqs.model.Message message : messages) {
-                    Message genericMessage = new Message(message.getBody());
-                    messagesMap.get(queueName).offer(genericMessage);
+                    // Convert Amazon SQS message to our general message type
+                    for (com.amazonaws.services.sqs.model.Message message : messages) {
+                        Message genericMessage = new Message(message.getBody(), message.getMessageId(), message.getReceiptHandle());
+                        messagesMap.get(queueName).offer(genericMessage);
+                    }
                 }
             }
+
+            Thread.yield();
         }
     };
 
@@ -109,9 +130,14 @@ public class QueueManager {
         enqueueActions = new ConcurrentLinkedQueue<>();
 
         // Start the async operations
-        executorService = Executors.newFixedThreadPool(queues.length + 1);
+        executorService = Executors.newFixedThreadPool(2);
         executorService.submit(messagePoller);
         executorService.submit(enququer);
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        executorService.shutdownNow();
     }
 
     /**
@@ -128,13 +154,16 @@ public class QueueManager {
         return null;
     }
 
+    public void confirmReceipt(String queueName, String receiptHandle) {
+        sqsClient.deleteMessage(queueUrls.get(queueName), receiptHandle);
+    }
+
     public void enqueue(String queueName, String messageBody) {
+        // TODO: split metadata and message body if too large
+
         SendMessageRequest sendMessageRequest = new SendMessageRequest(queueName, messageBody);
         Future<SendMessageResult> resultFuture = sqsClient.sendMessageAsync(sendMessageRequest);
 
         enqueueActions.add(resultFuture);
     }
-
-    // TODO: enqueue function with generic ability to split metadata and message body if too large
-    // too large being configurable and the splitting being optional(?)
 }

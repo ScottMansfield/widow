@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.queue.QueueManager;
 import com.widowcrawler.core.worker.NoOpWorkerProvider;
+import com.widowcrawler.core.worker.QueueCleanupCallback;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
 import com.widowcrawler.parse.model.ParseInput;
@@ -18,11 +19,11 @@ import java.io.IOException;
 @Singleton
 public class ParseWorkerProvider extends WorkerProvider {
 
-    @Inject
-    ObjectMapper objectMapper;
+    // TODO: this really ought to be config
+    private static final String QUEUE_NAME = "widow-parse";
 
     @Inject
-    QueueManager queueManager;
+    ObjectMapper objectMapper;
 
     @Inject
     NoOpWorkerProvider noOpWorkerProvider;
@@ -31,11 +32,11 @@ public class ParseWorkerProvider extends WorkerProvider {
     public Worker get() {
 
         try {
-            Message message = queueManager.nextMessage("parse");
+            Message message = queueClient.nextMessage(QUEUE_NAME);
 
             ParseInput parseInput = objectMapper.readValue(message.getBody(), ParseInput.class);
 
-            return new ParseWorker(parseInput);
+            return new ParseWorker(parseInput, new QueueCleanupCallback(queueClient, QUEUE_NAME, message.getReceiptHandle()));
         } catch (IOException ex) {
             return noOpWorkerProvider.get();
         }
