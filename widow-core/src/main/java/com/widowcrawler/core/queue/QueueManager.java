@@ -2,6 +2,7 @@ package com.widowcrawler.core.queue;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -36,6 +37,7 @@ public class QueueManager {
     private Runnable enququer = () -> {
 
         // TODO: Impose some sort of limit on the number of retries per message
+        // dead-letter queue for sure, probably through AWS config
 
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -75,8 +77,11 @@ public class QueueManager {
                 String queueUrl = entry.getValue();
 
                 if (messagesMap.get(queueName).size() < 1) {
-                    // pull new messages
-                    List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
+                    // pull new messages in batches with long-polling enabled
+                    ReceiveMessageRequest rmr = new ReceiveMessageRequest(queueUrl)
+                            .withMaxNumberOfMessages(10)
+                            .withWaitTimeSeconds(10);
+                    List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(rmr).getMessages();
 
                     // Convert Amazon SQS message to our general message type
                     for (com.amazonaws.services.sqs.model.Message message : messages) {
