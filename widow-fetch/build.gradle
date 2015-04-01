@@ -12,5 +12,5 @@ mainClassName = 'com.widowcrawler.fetch.Main'
 applicationDefaultJvmArgs = [
     "-Dcom.widowcrawler.queues=widow-fetch",
     "-Xdebug",
-    "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=11337"
+    "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=11337"
 ]

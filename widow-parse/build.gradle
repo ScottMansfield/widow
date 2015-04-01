@@ -1,6 +1,14 @@
+apply plugin:'application'
 
 dependencies {
     compile project(':widow-core')
 
     compile 'org.jsoup:jsoup:1.8.1'
 }
+
+mainClassName = 'com.widowcrawler.parse.Main'
+applicationDefaultJvmArgs = [
+        "-Dcom.widowcrawler.queues=widow-parse",
+        "-Xdebug",
+        "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=11338"
+]
