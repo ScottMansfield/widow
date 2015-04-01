@@ -18,7 +18,7 @@ public class ParseWorker extends Worker {
     }
 
     @Override
-    public void doWork() {
+    public boolean doWork() {
         Document document = Jsoup.parse(this.parseInput.getPageContent());
 
         String title = document.title();
@@ -28,5 +28,7 @@ public class ParseWorker extends Worker {
 
         // get links
         // get assets && calculate total page size
+
+        return true;
     }
 }

@@ -22,13 +22,13 @@ public abstract class Worker implements Runnable {
 
     @Override
     public void run() {
-        doWork();
-
-        // this is a bit wonky, but there's no way to just
-        // have a plain callback
-        callback.getAsBoolean();
+        if (doWork()) {
+            // this is a bit wonky, but there's no way to just
+            // have a plain callback
+            callback.getAsBoolean();
+        }
     }
 
     // TODO: return boolean for success
-    protected abstract void doWork();
+    protected abstract boolean doWork();
 }

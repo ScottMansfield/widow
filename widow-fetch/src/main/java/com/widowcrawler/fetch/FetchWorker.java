@@ -43,7 +43,7 @@ public class FetchWorker extends Worker {
     }
 
     @Override
-    public void doWork() {
+    public boolean doWork() {
         try {
             Invocation invocation = ClientBuilder.newClient().target(this.target).request().buildGet();
 
@@ -72,8 +72,11 @@ public class FetchWorker extends Worker {
 
             this.queueManager.enqueue(PARSE_QUEUE, objectMapper.writeValueAsString(parseInput));
 
+            return true;
+
         } catch (Exception ex) {
             logger.error("Exception while fetching", ex);
+            return false;
         }
     }
 }
