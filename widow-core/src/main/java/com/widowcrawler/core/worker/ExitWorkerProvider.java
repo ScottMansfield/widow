@@ -5,7 +5,7 @@ package com.widowcrawler.core.worker;
  */
 public class ExitWorkerProvider extends WorkerProvider {
 
-    public static final Worker EXIT_SIGNAL = new Worker(() -> true) {
+    public static final Worker EXIT_SIGNAL = new Worker() {
         @Override
         protected void doWork() {
             //no-op

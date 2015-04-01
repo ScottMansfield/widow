@@ -10,8 +10,14 @@ public abstract class Worker implements Runnable {
 
     private BooleanSupplier callback;
 
-    protected Worker(BooleanSupplier callback) {
+    /**
+     * Sets the queue cleanup calback for this worker. Must be set by creator.
+     *
+     * @param callback the {@link java.util.function.BooleanSupplier} to run after the work is done
+     */
+    public Worker withCallback(BooleanSupplier callback) {
         this.callback = callback;
+        return this;
     }
 
     @Override
@@ -23,5 +29,6 @@ public abstract class Worker implements Runnable {
         callback.getAsBoolean();
     }
 
+    // TODO: return boolean for success
     protected abstract void doWork();
 }

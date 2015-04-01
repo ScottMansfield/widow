@@ -1,8 +1,9 @@
 package com.widowcrawler.fetch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.widowcrawler.core.queue.QueueManager;
 import com.widowcrawler.core.worker.Worker;
-import com.widowcrawler.parse.model.ParseInput;
+import com.widowcrawler.core.model.ParseInput;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +11,11 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BooleanSupplier;
 
 /**
  * @author Scott Mansfield
@@ -25,14 +24,22 @@ public class FetchWorker extends Worker {
 
     private static final Logger logger = LoggerFactory.getLogger(FetchWorker.class);
 
+    // TODO: This really needs to be config
+    private static final String PARSE_QUEUE = "widow-parse";
+
     @Inject
     QueueManager queueManager;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     private String target;
 
-    public FetchWorker(String target, BooleanSupplier callback) {
-        super(callback);
+    public FetchWorker() { }
+
+    public FetchWorker withTarget(String target) {
         this.target = target;
+        return this;
     }
 
     @Override
@@ -51,8 +58,10 @@ public class FetchWorker extends Worker {
 
             stringHeaders.keySet().forEach(key -> headerMap.put(key, stringHeaders.get(key)));
 
+            String pageBody = response.readEntity(String.class);
+
             ParseInput parseInput = new ParseInput.Builder()
-                    .withPageContent(response.getEntity().toString())
+                    .withPageContent(pageBody)
                     .withHeaders(headerMap)
                     .withStatusCode(response.getStatus())
                     .withLocale(response.getLanguage())
@@ -61,9 +70,8 @@ public class FetchWorker extends Worker {
                     .withResponseSizeBytes(response.getLength())
                     .build();
 
-            // TODO: enqueue, with option to break apart page body from metadata
-            // background: sqs data size limits will eff up your day if your page is > ~255kb
-            // then... cry
+            this.queueManager.enqueue(PARSE_QUEUE, objectMapper.writeValueAsString(parseInput));
+
         } catch (Exception ex) {
             logger.error("Exception while fetching", ex);
         }

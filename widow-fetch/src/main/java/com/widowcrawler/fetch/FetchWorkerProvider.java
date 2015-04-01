@@ -7,11 +7,12 @@ import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.worker.QueueCleanupCallback;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
-import com.widowcrawler.fetch.model.FetchInput;
+import com.widowcrawler.core.model.FetchInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.IOException;
 
@@ -28,6 +29,9 @@ public class FetchWorkerProvider extends WorkerProvider {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    Provider<FetchWorker> seed;
+
     /**
      * Gets the next worker to fetch page content
      *
@@ -38,8 +42,9 @@ public class FetchWorkerProvider extends WorkerProvider {
         Worker worker = null;
         Message message = queueClient.nextMessage(QUEUE_NAME);
 
+        // TODO: Make spinning on queue more efficient
+        // maybe register a listener? wait() on it?
         while (message == null) {
-            //logger.info("Getting message...");
             message = queueClient.nextMessage(QUEUE_NAME);
         }
 
@@ -48,7 +53,8 @@ public class FetchWorkerProvider extends WorkerProvider {
         while (worker == null) {
             try {
                 FetchInput target = objectMapper.readValue(message.getBody(), FetchInput.class);
-                worker = new FetchWorker(target.getUrl(), new QueueCleanupCallback(queueClient, QUEUE_NAME, message.getReceiptHandle()));
+                worker = seed.get().withTarget(target.getUrl())
+                    .withCallback(new QueueCleanupCallback(queueClient, QUEUE_NAME, message.getReceiptHandle()));
 
             } catch (JsonParseException | JsonMappingException ex) {
                 logger.error("[DROPPING MESSAGE] Could not parse message. Moving to next message in queue. Content: " + message.getBody(), ex);
