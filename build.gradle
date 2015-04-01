@@ -4,12 +4,17 @@ version = '0.1'
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'jacoco'
 
     sourceCompatibility = 1.8
     version = '0.1'
 
     repositories {
         mavenCentral()
+    }
+
+    jacoco {
+        toolVersion = "0.7.4.201502262128"
     }
 
     dependencies {
