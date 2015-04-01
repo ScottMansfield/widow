@@ -105,7 +105,7 @@ public class QueueManager {
         // still need a better story around credentials for the sqs client
         // Also should probably have a custom message type so we can support local in-memory queues as well as SQS
 
-        String queuesProperty = System.getProperty("com.widowcrawler.queues");
+        String queuesProperty = StringUtils.trim(System.getProperty("com.widowcrawler.queues"));
         Validate.notEmpty(queuesProperty);
 
         String[] queues = StringUtils.split(queuesProperty, "| ");
