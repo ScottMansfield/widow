@@ -1,4 +1,4 @@
-package com.widowcrawler.fetch.model;
+package com.widowcrawler.core.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
