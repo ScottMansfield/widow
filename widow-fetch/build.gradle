@@ -3,6 +3,7 @@ apply plugin:'application'
 dependencies {
     compile project(':widow-core')
 
+    // For pulling the pages
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile 'org.glassfish.jersey.core:jersey-client:2.17'
 }
