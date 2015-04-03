@@ -11,6 +11,7 @@ while queue.nil? do
   index = 0
   queue_urls.each do |queueName|
     puts index.to_s + ": " + queueName
+    index = index.succ
   end
 
   puts "\nQueue number:"
