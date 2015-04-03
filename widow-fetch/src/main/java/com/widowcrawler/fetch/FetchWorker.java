@@ -1,6 +1,7 @@
 package com.widowcrawler.fetch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.queue.QueueManager;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.model.ParseInput;
@@ -61,13 +62,14 @@ public class FetchWorker extends Worker {
             String pageBody = response.readEntity(String.class);
 
             ParseInput parseInput = new ParseInput.Builder()
+                    .withOriginalURL(this.target)
                     .withPageContent(pageBody)
                     .withHeaders(headerMap)
                     .withStatusCode(response.getStatus())
-                    .withLocale(response.getLanguage())
-                    .withTimeAccessed(new DateTime(response.getDate()))
-                    .withLoadTimeMillis(requestDuration)
-                    .withResponseSizeBytes(response.getLength())
+                    .withAttribute(PageAttribute.LOCALE, response.getLanguage())
+                    .withAttribute(PageAttribute.TIME_ACCESSED, new DateTime(response.getDate()))
+                    .withAttribute(PageAttribute.LOAD_TIME_MILLIS, requestDuration)
+                    .withAttribute(PageAttribute.RESPONSE_SIZE, response.getLength())
                     .build();
 
             this.queueManager.enqueue(PARSE_QUEUE, objectMapper.writeValueAsString(parseInput));

@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.time.DateTime;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Scott Mansfield
@@ -14,36 +12,32 @@ import java.util.Map;
 public class ParseInput {
 
     // TODO: still probably needs a lot more fields
+    // TODO: Use attribute map instead of individual fields
+    // TODO: original URL as field (wtf)
 
-    // basic content
-    private String pageContent;
-    private Map<String, List<String>> headers;
+    // Raw data backfrom server
+    private String originalURL;
     private Integer statusCode;
+    private Map<String, List<String>> headers;
+    private String pageContent;
 
     // any extra data that can be collected
-    private Locale locale;
-    private DateTime timeAccessed;
-    private Double loadTimeMillis;
-    private Integer responseSizeBytes;
+    private Map<PageAttribute, Object> attributes;
 
     public static class Builder {
         private ParseInput building;
 
         public Builder() {
             this.building = new ParseInput();
+            this.building.attributes = new HashMap<>();
         }
 
         public ParseInput build() {
             return this.building;
         }
 
-        public Builder withPageContent(String pageContent) {
-            this.building.pageContent = pageContent;
-            return this;
-        }
-
-        public Builder withHeaders(Map<String, List<String>> headers) {
-            this.building.headers = headers;
+        public Builder withOriginalURL(String originalURL) {
+            this.building.originalURL = originalURL;
             return this;
         }
 
@@ -52,23 +46,18 @@ public class ParseInput {
             return this;
         }
 
-        public Builder withLocale(Locale locale) {
-            this.building.locale = locale;
+        public Builder withHeaders(Map<String, List<String>> headers) {
+            this.building.headers = headers;
             return this;
         }
 
-        public Builder withTimeAccessed(DateTime timeAccessed) {
-            this.building.timeAccessed = timeAccessed;
+        public Builder withPageContent(String pageContent) {
+            this.building.pageContent = pageContent;
             return this;
         }
 
-        public Builder withLoadTimeMillis(Double loadTimeMillis) {
-            this.building.loadTimeMillis = loadTimeMillis;
-            return this;
-        }
-
-        public Builder withResponseSizeBytes(Integer responseSizeBytes) {
-            this.building.responseSizeBytes = responseSizeBytes;
+        public Builder withAttribute(PageAttribute pageAttribute, Object value) {
+            this.building.attributes.put(pageAttribute, value);
             return this;
         }
     }
@@ -79,19 +68,20 @@ public class ParseInput {
     // save me from my OCD
     @JsonCreator
     private ParseInput(
+            @JsonProperty("originalURL")       String originalURL,
             @JsonProperty("pageContent")       String pageContent,
             @JsonProperty("headers")           Map<String, List<String>> headers,
             @JsonProperty("status")            Integer statusCode,
-            @JsonProperty("locale")            Locale locale,
-            @JsonProperty("timeAccessed")      DateTime timeAccessed,
-            @JsonProperty("loadTimeMillis")    Double loadTimeMillis,
-            @JsonProperty("responseSizeBytes") Integer responseSizeBytes) {
+            @JsonProperty("attributes")        Map<PageAttribute, Object> attributes) {
+        this.originalURL = originalURL;
         this.pageContent = pageContent;
-        this.headers = headers;
+        this.headers = Collections.unmodifiableMap(headers);
         this.statusCode = statusCode;
-        this.timeAccessed = timeAccessed;
-        this.loadTimeMillis = loadTimeMillis;
-        this.responseSizeBytes = responseSizeBytes;
+        this.attributes = Collections.unmodifiableMap(attributes);
+    }
+
+    public String getOriginalURL() {
+        return originalURL;
     }
 
     public String getPageContent() {
@@ -106,19 +96,7 @@ public class ParseInput {
         return statusCode;
     }
 
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public DateTime getTimeAccessed() {
-        return timeAccessed;
-    }
-
-    public Double getLoadTimeMillis() {
-        return loadTimeMillis;
-    }
-
-    public Integer getResponseSizeBytes() {
-        return responseSizeBytes;
+    public Map<PageAttribute, Object> getAttributes() {
+        return attributes;
     }
 }
