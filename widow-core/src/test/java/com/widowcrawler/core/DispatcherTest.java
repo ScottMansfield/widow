@@ -1,6 +1,7 @@
 package com.widowcrawler.core;
 
 import com.widowcrawler.core.dispatch.Dispatcher;
+import com.widowcrawler.core.worker.ExitWorkerProvider;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -8,6 +9,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import javax.inject.Provider;
 import java.util.concurrent.ExecutorService;
@@ -22,7 +25,6 @@ public class DispatcherTest {
     private ExecutorService executorServiceMock;
 
     @Before
-    @SuppressWarnings("unchecked")
     public void before() throws Exception {
         this.dispatcher = new Dispatcher();
 
@@ -44,9 +46,25 @@ public class DispatcherTest {
         replay(workerMock, workerProviderMock, executorServiceMock);
 
         // Act
-        this.dispatcher.dispatch();
+        boolean retval = this.dispatcher.dispatch();
 
         // Assert
         verify(workerMock, workerProviderMock, executorServiceMock);
+        assertTrue(retval);
+    }
+
+    @Test
+    public void dispatch_exitWorkerProvided_dispatchExitsWithFalse() {
+        // Arrange
+        expect(workerProviderMock.get()).andReturn(ExitWorkerProvider.EXIT_SIGNAL);
+
+        replay(workerProviderMock, executorServiceMock);
+
+        // Act
+        boolean retval = dispatcher.dispatch();
+
+        // Assert
+        verify(workerProviderMock, executorServiceMock);
+        assertFalse(retval);
     }
 }
