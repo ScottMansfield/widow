@@ -1,19 +1,19 @@
 package com.widowcrawler.core;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.*;
+import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.GetQueueUrlResult;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
+import com.amazonaws.services.sqs.model.ReceiptHandleIsInvalidException;
 import com.widowcrawler.core.queue.QueueManager;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.*;
 import static org.junit.Assert.assertNull;
-import static org.powermock.api.easymock.PowerMock.*;
 
 /**
  * @author Scott Mansfield
