@@ -28,10 +28,12 @@ public class QueueManager {
     @Inject
     private AmazonSQSAsyncClient sqsClient;
 
+    @Inject
+    private ExecutorService executorService;
+
     private Map<String, ConcurrentLinkedQueue<Message>> messagesMap = null;
     private Map<String, String> queueUrls = null;
 
-    private ExecutorService executorService = null;
     private Queue<Future<SendMessageResult>> enqueueActions = null;
 
     private Runnable enququer = () -> {
@@ -95,8 +97,6 @@ public class QueueManager {
         }
     };
 
-    public QueueManager() { }
-
     @PostConstruct
     public void postConstruct() {
         // configuration ftw
@@ -135,14 +135,8 @@ public class QueueManager {
         enqueueActions = new ConcurrentLinkedQueue<>();
 
         // Start the async operations
-        executorService = Executors.newFixedThreadPool(2);
         executorService.submit(messagePoller);
         executorService.submit(enququer);
-    }
-
-    @PreDestroy
-    public void preDestroy() {
-        executorService.shutdownNow();
     }
 
     /**
@@ -150,16 +144,29 @@ public class QueueManager {
      *
      * @param queueName the name of the queue
      * @return the mext message in the queue
+     * @throws java.lang.IllegalArgumentException when the queue is not set up
      */
     public Message nextMessage(String queueName) {
         if (messagesMap.get(queueName) != null) {
             return messagesMap.get(queueName).poll();
         }
 
-        return null;
+        throw new IllegalArgumentException("Queue " + queueName + " is not set up in the QueueManager");
     }
 
+    /**
+     * Confirms the receipt of a message. Can be used before or after processing, but care must be
+     * taken to avoid losing messages.
+     *
+     * @param queueName the name of the queue
+     * @param receiptHandle the receipt handle on the original message
+     * @throws java.lang.IllegalArgumentException when th queue is not set up
+     */
     public void confirmReceipt(String queueName, String receiptHandle) {
+        if (queueUrls.get(queueName) == null) {
+            throw new IllegalArgumentException("Queue " + queueName + " is not set up in the QueueManager");
+        }
+
         sqsClient.deleteMessage(queueUrls.get(queueName), receiptHandle);
     }
 
