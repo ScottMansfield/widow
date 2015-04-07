@@ -31,7 +31,7 @@ public class QueueManager {
     @Inject
     private ExecutorService executorService;
 
-    private Map<String, ConcurrentLinkedQueue<Message>> messagesMap = null;
+    private Map<String, LinkedBlockingQueue<Message>> messagesMap = null;
     private Map<String, String> queueUrls = null;
 
     private Queue<Future<SendMessageResult>> enqueueActions = null;
@@ -111,7 +111,7 @@ public class QueueManager {
         String[] queues = StringUtils.split(queuesProperty, "| ");
 
         // Initialize the message and queue URLs
-        Map<String, ConcurrentLinkedQueue<Message>> tempMessagesMap = new HashMap<>(queues.length);
+        Map<String, LinkedBlockingQueue<Message>> tempMessagesMap = new HashMap<>(queues.length);
         Map<String, String> tempQueueUrls = new HashMap<>(queues.length);
 
         for (String queue : queues) {
@@ -124,7 +124,7 @@ public class QueueManager {
                 queueUrl = sqsClient.createQueue(queue).getQueueUrl();
             }
 
-            tempMessagesMap.put(queue, new ConcurrentLinkedQueue<>());
+            tempMessagesMap.put(queue, new LinkedBlockingQueue<>());
             tempQueueUrls.put(queue, queueUrl);
         }
 
@@ -140,15 +140,15 @@ public class QueueManager {
     }
 
     /**
-     * Gets the next message in the queue, or <i>null</i> for queues with no ready messages
+     * Gets the next message in the queue, or blocks until one becomes available
      *
      * @param queueName the name of the queue
      * @return the mext message in the queue
      * @throws java.lang.IllegalArgumentException when the queue is not set up
      */
-    public Message nextMessage(String queueName) {
+    public Message nextMessage(String queueName) throws InterruptedException {
         if (messagesMap.get(queueName) != null) {
-            return messagesMap.get(queueName).poll();
+            return messagesMap.get(queueName).take();
         }
 
         throw new IllegalArgumentException("Queue " + queueName + " is not set up in the QueueManager");

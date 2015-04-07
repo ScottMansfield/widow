@@ -1,13 +1,12 @@
 package com.widowcrawler.fetch;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.queue.Message;
+import com.widowcrawler.core.worker.NoOpWorkerProvider;
 import com.widowcrawler.core.worker.QueueCleanupCallback;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
-import com.widowcrawler.core.model.FetchInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +29,9 @@ public class FetchWorkerProvider extends WorkerProvider {
     ObjectMapper objectMapper;
 
     @Inject
+    NoOpWorkerProvider noOpWorkerProvider;
+
+    @Inject
     Provider<FetchWorker> seed;
 
     /**
@@ -39,32 +41,24 @@ public class FetchWorkerProvider extends WorkerProvider {
      */
     @Override
     public Worker get() {
-        Worker worker = null;
-        Message message = queueClient.nextMessage(QUEUE_NAME);
+        try {
+            Message message = queueClient.nextMessage(QUEUE_NAME);
 
-        // TODO: Make spinning on queue more efficient
-        // maybe register a listener? wait() on it?
-        while (message == null) {
-            message = queueClient.nextMessage(QUEUE_NAME);
-        }
+            logger.info("Received message: " + message.getBody());
 
-        logger.info("Received message: " + message.getBody());
+            FetchInput target = objectMapper.readValue(message.getBody(), FetchInput.class);
 
-        while (worker == null) {
-            try {
-                FetchInput target = objectMapper.readValue(message.getBody(), FetchInput.class);
-                worker = seed.get().withTarget(target.getUrl())
+            return seed.get().withTarget(target.getUrl())
                     .withCallback(new QueueCleanupCallback(queueClient, QUEUE_NAME, message.getReceiptHandle()));
 
-            } catch (JsonParseException | JsonMappingException ex) {
-                logger.error("[DROPPING MESSAGE] Could not parse message. Moving to next message in queue. Content: " + message.getBody(), ex);
-                message = queueClient.nextMessage(QUEUE_NAME);
-
-            } catch (IOException ex) {
-                logger.error("IOException while parsing content. Retrying indefinitely... Content: " + message.getBody(), ex);
-            }
+        } catch(InterruptedException ex) {
+            logger.info("Thread interrupted", ex);
+            Thread.currentThread().interrupt();
+        } catch (IOException ex) {
+            // TODO: dead-letter queue?
+            logger.error("Error parsing JSON", ex);
         }
 
-        return worker;
+        return noOpWorkerProvider.get();
     }
 }
