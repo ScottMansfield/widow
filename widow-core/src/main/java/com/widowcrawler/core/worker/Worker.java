@@ -11,7 +11,7 @@ public abstract class Worker implements Runnable {
     private BooleanSupplier callback;
 
     /**
-     * Sets the queue cleanup calback for this worker. Must be set by creator.
+     * Sets the queue cleanup callback for this worker. Must be set by creator.
      *
      * @param callback the {@link java.util.function.BooleanSupplier} to run after the work is done
      */
@@ -29,6 +29,5 @@ public abstract class Worker implements Runnable {
         }
     }
 
-    // TODO: return boolean for success
     protected abstract boolean doWork();
 }

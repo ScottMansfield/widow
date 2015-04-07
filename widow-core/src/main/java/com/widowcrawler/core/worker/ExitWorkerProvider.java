@@ -8,7 +8,7 @@ public class ExitWorkerProvider extends WorkerProvider {
     public static final Worker EXIT_SIGNAL = new Worker() {
         @Override
         protected boolean doWork() {
-            return true;
+            return false;
         }
     };
 
