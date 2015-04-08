@@ -1,7 +1,14 @@
 package com.widowcrawler.index;
 
+import com.widowcrawler.core.runner.AppRunner;
+import com.widowcrawler.index.module.WidowIndexModule;
+
 /**
- * Created by smansfield on 4/7/15.
+ * @author Scott Mansfield
  */
 public class Main {
+
+    public static void main(String[] args) throws Exception {
+        AppRunner.run(WidowIndexModule.class);
+    }
 }
