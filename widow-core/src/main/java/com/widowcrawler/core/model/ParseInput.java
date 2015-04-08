@@ -11,11 +11,7 @@ import java.util.*;
  */
 public class ParseInput {
 
-    // TODO: still probably needs a lot more fields
-    // TODO: Use attribute map instead of individual fields
-    // TODO: original URL as field (wtf)
-
-    // Raw data backfrom server
+    // Raw data from server
     private String originalURL;
     private Integer statusCode;
     private Map<String, List<String>> headers;
