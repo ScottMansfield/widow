@@ -21,7 +21,7 @@ import java.io.IOException;
 @Singleton
 public class ParseWorkerProvider extends WorkerProvider {
 
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private static Logger logger = LoggerFactory.getLogger(ParseWorkerProvider.class);
 
     // TODO: this really ought to be config
     private static final String PARSE_QUEUE = "widow-parse";

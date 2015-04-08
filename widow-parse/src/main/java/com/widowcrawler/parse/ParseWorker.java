@@ -1,6 +1,7 @@
 package com.widowcrawler.parse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
@@ -17,9 +18,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Scott Mansfield
@@ -28,7 +28,11 @@ public class ParseWorker extends Worker {
 
     private static final Logger logger = LoggerFactory.getLogger(ParseWorker.class);
 
+    private static final Set<String> sentToFetch = new HashSet<>();
+    private static final Map<String, Integer> cachedAssetSizes = new HashMap<>();
+
     // TODO: This really needs to be configuration
+    private static final String FETCH_QUEUE = "widow-fetch";
     private static final String INDEX_QUEUE = "widow-index";
 
     @Inject
@@ -36,6 +40,9 @@ public class ParseWorker extends Worker {
 
     @Inject
     QueueManager queueManager;
+
+    @Inject
+    LinkNormalizer linkNormalizer;
 
     private ParseInput parseInput;
 
@@ -54,72 +61,36 @@ public class ParseWorker extends Worker {
             Document document = Jsoup.parse(parseInput.getPageContent());
 
             IndexInput.Builder builder = new IndexInput.Builder()
+                    .withOriginalURL(parseInput.getOriginalURL())
+                    .withPageContent(parseInput.getPageContent())
+                    .withStatusCode(parseInput.getStatusCode())
+                    .withHeaders(parseInput.getHeaders())
                     .withExistingAttributes(parseInput.getAttributes());
 
             int pageContentSize = parseInput.getPageContent().length();
             builder.withAttribute(PageAttribute.CONTENT_SIZE, pageContentSize);
 
-            // Record title, even if it's just whitespace
+            // Record title, even if it's blank
             String title = document.title();
             if (title != null) {
                 builder.withAttribute(PageAttribute.TITLE, title);
             }
 
             // get links
-            final Elements aTagElements = document.getElementsByTag("a");
-            final List<String> outLinks = new LinkedList<>();
-
-            for (Element element : aTagElements) {
-                String href = element.attr("href");
-
-                if (StringUtils.isNotBlank(href)) {
-                    outLinks.add(href);
-                }
-            }
-
+            final Set<String> outLinks = collectLinks(document, "a", "href");
             builder.withAttribute(PageAttribute.OUT_LINKS, outLinks);
 
             // get asset links
             // link tags (href)
-            final Elements linkTagElements = document.getElementsByTag("link");
-            final List<String> cssLinks = new LinkedList<>();
-
-            for (Element element : linkTagElements) {
-                String href = element.attr("href");
-
-                if (StringUtils.isNotBlank(href)) {
-                    cssLinks.add(href);
-                }
-            }
-
+            final Set<String> cssLinks = collectLinks(document, "link", "href");
             builder.withAttribute(PageAttribute.CSS_LINKS, cssLinks);
 
             // script tags (src)
-            final Elements scriptTagElements = document.getElementsByTag("script");
-            final List<String> jsLinks = new LinkedList<>();
-
-            for (Element element : scriptTagElements) {
-                String src = element.attr("src");
-
-                if (StringUtils.isNotBlank(src)) {
-                    jsLinks.add(src);
-                }
-            }
-
+            final Set<String> jsLinks = collectLinks(document, "script", "src");
             builder.withAttribute(PageAttribute.JS_LINKS, jsLinks);
 
             // img tags (src)
-            final Elements imgTagElements = document.getElementsByTag("img");
-            final List<String> imgLinks = new LinkedList<>();
-
-            for (Element element : imgTagElements) {
-                String src = element.attr("src");
-
-                if (StringUtils.isNotBlank(src)) {
-                    imgLinks.add(src);
-                }
-            }
-
+            final Set<String> imgLinks = collectLinks(document, "img", "src");
             builder.withAttribute(PageAttribute.IMG_LINKS, imgLinks);
 
             // retrieve all assets and calculate total page size
@@ -133,19 +104,47 @@ public class ParseWorker extends Worker {
                 // TODO: Metrics on all asset load times as well
                 // it's hard to tell what's necessary to render above the fold, but we can add it all together....
 
-                // TODO: normalize links!!!
-                final Response response = ClientBuilder.newClient().target(link).request().buildGet().invoke();
+                String norm = linkNormalizer.normalize(parseInput.getOriginalURL(), link);
+                Integer assetSize = cachedAssetSizes.get(norm);
 
-                // read the response into a String to guarantee we get a length
-                // rather than rely on a server returning a Content-Length header
-                int assetSize = response.readEntity(String.class).length();
+                if (assetSize == null) {
+                    logger.info("Normalized URI. Original: " + link + " | Normalized: " + norm);
+
+                    final Response response = ClientBuilder.newClient().target(norm).request().buildGet().invoke();
+
+                    // read the response into a String to guarantee we get a length
+                    // rather than rely on a server returning a Content-Length header
+                    assetSize = response.readEntity(String.class).length();
+
+                    cachedAssetSizes.put(norm, assetSize);
+
+                    // TODO: Parse CSS and pull in any referenced images and external css
+                }
 
                 totalPageSize += assetSize;
             }
 
             builder.withAttribute(PageAttribute.SIZE_WITH_ASSETS, totalPageSize);
 
+            // TODO: insert whatever custom parsing here
+
             queueManager.enqueue(INDEX_QUEUE, objectMapper.writeValueAsString(builder.build()));
+
+            outLinks.stream()
+                    .map((link) -> linkNormalizer.normalize(parseInput.getOriginalURL(), link))
+                    .filter(StringUtils::isNotBlank)
+                    .forEach((link) -> {
+                        if (sentToFetch.contains(link)) return;
+
+                        try {
+                            logger.info("Enqueuing fetch message for " + link);
+                            FetchInput fetchInput = new FetchInput(link);
+                            queueManager.enqueue(FETCH_QUEUE, objectMapper.writeValueAsString(fetchInput));
+                            sentToFetch.add(link);
+                        } catch (Exception ex) {
+                            throw new RuntimeException(ex.getMessage(), ex);
+                        }
+                    });
 
             return true;
 
@@ -153,5 +152,13 @@ public class ParseWorker extends Worker {
             logger.error("Parsing failed", ex);
             return false;
         }
+    }
+
+    private Set<String> collectLinks(Document document, String tagName, String attrName) {
+        final Elements elements = document.getElementsByTag(tagName);
+        return elements.stream()
+                .map((elem) -> elem.attr(attrName))
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
     }
 }
