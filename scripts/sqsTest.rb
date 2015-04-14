@@ -1,6 +1,8 @@
+#!/usr/local/bin/ruby
+
 require "aws-sdk-core"
 
-sqs = Aws::SQS::Client.new(region: 'us-east-1')
+sqs = Aws::SQS::Client.new(region: 'us-west-2')
 
 queue_urls = sqs.list_queues(queue_name_prefix: "widow-")[:queue_urls]
 
