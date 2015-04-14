@@ -38,9 +38,6 @@ public class QueueManager {
 
     private Runnable enququer = () -> {
 
-        // TODO: Impose some sort of limit on the number of retries per message
-        // dead-letter queue for sure, probably through AWS config
-
         //noinspection InfiniteLoopStatement
         while (true) {
             Future<SendMessageResult> future = null;
