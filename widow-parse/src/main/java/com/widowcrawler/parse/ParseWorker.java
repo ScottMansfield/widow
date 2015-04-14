@@ -1,12 +1,17 @@
 package com.widowcrawler.parse;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.retry.Retry;
 import com.widowcrawler.core.worker.Worker;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,6 +39,7 @@ public class ParseWorker extends Worker {
     // TODO: This really needs to be configuration
     private static final String FETCH_QUEUE = "widow-fetch";
     private static final String INDEX_QUEUE = "widow-index";
+    private static final String BUCKET_NAME = "widow-test";
 
     @Inject
     ObjectMapper objectMapper;
@@ -44,6 +50,12 @@ public class ParseWorker extends Worker {
     @Inject
     LinkNormalizer linkNormalizer;
 
+    @Inject
+    AmazonS3 amazonS3Client;
+
+    @Inject
+    Retry retry;
+
     private ParseInput parseInput;
 
     public ParseWorker withInput(ParseInput input) {
@@ -52,22 +64,30 @@ public class ParseWorker extends Worker {
     }
 
     // TODO: Major: this should be pluggable for different paths / formats / etc.
+    // think img/jpeg should not be parsed
+    // feeds can be parsed in a different way (i.e. RSS XML) to pull out links
+    // application/atom+xml
+    //
     // the current implementation will be a default
 
     @Override
     public boolean doWork() {
 
         try {
-            Document document = Jsoup.parse(parseInput.getPageContent());
+            // get page content from S3
+            String pageContentRef = parseInput.getAttribute(PageAttribute.PAGE_CONTENT_REF).toString();
+            GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, pageContentRef);
 
-            IndexInput.Builder builder = new IndexInput.Builder()
-                    .withOriginalURL(parseInput.getOriginalURL())
-                    .withPageContent(parseInput.getPageContent())
-                    .withStatusCode(parseInput.getStatusCode())
-                    .withHeaders(parseInput.getHeaders())
-                    .withExistingAttributes(parseInput.getAttributes());
+            final S3Object s3Object = retry.retry(() -> amazonS3Client.getObject(getObjectRequest));
 
-            int pageContentSize = parseInput.getPageContent().length();
+            final String pageContent = IOUtils.toString(s3Object.getObjectContent());
+            IOUtils.closeQuietly(s3Object.getObjectContent());
+
+            Document document = Jsoup.parse(pageContent);
+
+            IndexInput.Builder builder = new IndexInput.Builder().withExistingAttributes(parseInput.getAttributes());
+
+            int pageContentSize = pageContent.length();
             builder.withAttribute(PageAttribute.CONTENT_SIZE, pageContentSize);
 
             // Record title, even if it's blank
@@ -104,7 +124,7 @@ public class ParseWorker extends Worker {
                 // TODO: Metrics on all asset load times as well
                 // it's hard to tell what's necessary to render above the fold, but we can add it all together....
 
-                String norm = linkNormalizer.normalize(parseInput.getOriginalURL(), link);
+                String norm = linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link);
                 Integer assetSize = cachedAssetSizes.get(norm);
 
                 if (assetSize == null) {
@@ -131,7 +151,7 @@ public class ParseWorker extends Worker {
             queueManager.enqueue(INDEX_QUEUE, objectMapper.writeValueAsString(builder.build()));
 
             outLinks.stream()
-                    .map((link) -> linkNormalizer.normalize(parseInput.getOriginalURL(), link))
+                    .map((link) -> linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link))
                     .filter(StringUtils::isNotBlank)
                     .forEach((link) -> {
                         if (sentToFetch.contains(link)) return;
