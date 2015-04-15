@@ -21,11 +21,11 @@ public class Retry {
 
     private static final Integer VARIANCE = 10000;
 
-    public <T> T retry(Supplier<T> tryMe) throws InterruptedException, RetryFailedException {
+    public static <T> T retry(Supplier<T> tryMe) throws InterruptedException, RetryFailedException {
         return retry(tryMe, DEFAULT_RETRY_COUNT);
     }
 
-    public <T> T retry(Supplier<T> tryMe, int times) throws InterruptedException, RetryFailedException {
+    public static <T> T retry(Supplier<T> tryMe, int times) throws InterruptedException, RetryFailedException {
         Throwable latestError = null;
 
         for (int i = 1; i <= times; i++) {

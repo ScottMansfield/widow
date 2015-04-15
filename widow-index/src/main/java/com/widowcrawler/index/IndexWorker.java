@@ -7,7 +7,6 @@ import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
-import com.widowcrawler.core.retry.Retry;
 import com.widowcrawler.core.worker.Worker;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -16,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.widowcrawler.core.retry.Retry.retry;
 
 /**
  * @author Scott Mansfield
@@ -29,9 +30,6 @@ public class IndexWorker extends Worker {
 
     @Inject
     AmazonDynamoDB dynamoDBClient;
-
-    @Inject
-    Retry retry;
 
     private IndexInput indexInput;
 
@@ -74,7 +72,7 @@ public class IndexWorker extends Worker {
                     .withItem(attributeValueMap)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
 
-            final PutItemResult putItemResult = retry.retry(() -> dynamoDBClient.putItem(putItemRequest));
+            final PutItemResult putItemResult = retry(() -> dynamoDBClient.putItem(putItemRequest));
 
             logger.info("Consumed table capacity: " + putItemResult.getConsumedCapacity().getCapacityUnits());
 

@@ -37,7 +37,5 @@ public class WidowCoreModule extends AbstractModule {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JodaModule());
         bind(ObjectMapper.class).toInstance(mapper);
-
-        bind(Retry.class).asEagerSingleton();
     }
 }

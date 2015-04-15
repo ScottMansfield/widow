@@ -6,10 +6,9 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.widowcrawler.core.model.PageAttribute;
-import com.widowcrawler.core.queue.QueueManager;
-import com.widowcrawler.core.retry.Retry;
-import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.model.ParseInput;
+import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.worker.Worker;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.widowcrawler.core.retry.Retry.retry;
 
 /**
  * @author Scott Mansfield
@@ -44,9 +45,6 @@ public class FetchWorker extends Worker {
 
     @Inject
     ObjectMapper objectMapper;
-
-    @Inject
-    Retry retry;
 
     @Inject
     AmazonS3 amazonS3Client;
@@ -96,7 +94,7 @@ public class FetchWorker extends Worker {
                     new ByteArrayInputStream(pageBody.getBytes()),
                     objectMetadata);
 
-            final PutObjectResult putObjectResult = retry.retry(() -> amazonS3Client.putObject(putObjectRequest));
+            final PutObjectResult putObjectResult = retry(() -> amazonS3Client.putObject(putObjectRequest));
 
             logger.info("S3 put success. Object ID: " + pageContentRef + " | Content MD5: " + putObjectResult.getContentMd5());
 

@@ -9,13 +9,11 @@ import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
-import com.widowcrawler.core.retry.Retry;
 import com.widowcrawler.core.worker.Worker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +23,8 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.widowcrawler.core.retry.Retry.retry;
 
 /**
  * @author Scott Mansfield
@@ -53,9 +53,6 @@ public class ParseWorker extends Worker {
     @Inject
     AmazonS3 amazonS3Client;
 
-    @Inject
-    Retry retry;
-
     private ParseInput parseInput;
 
     public ParseWorker withInput(ParseInput input) {
@@ -78,7 +75,7 @@ public class ParseWorker extends Worker {
             String pageContentRef = parseInput.getAttribute(PageAttribute.PAGE_CONTENT_REF).toString();
             GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, pageContentRef);
 
-            final S3Object s3Object = retry.retry(() -> amazonS3Client.getObject(getObjectRequest));
+            final S3Object s3Object = retry(() -> amazonS3Client.getObject(getObjectRequest));
 
             final String pageContent = IOUtils.toString(s3Object.getObjectContent());
             IOUtils.closeQuietly(s3Object.getObjectContent());
