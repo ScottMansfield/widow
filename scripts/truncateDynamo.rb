@@ -7,11 +7,19 @@ def truncate(dynamodb, table)
   continue = true
   last_key = nil
 
+  puts "Scanning table for keys"
+
   while continue do
-    result = dynamodb.scan({
+    scan_request = {
       table_name: table,
       attributes_to_get: ['ORIGINAL_URL', 'TIME_ACCESSED']
-    })
+    }
+
+    if last_key
+      scan_request[:exclusive_start_key] = last_key
+    end
+
+    result = dynamodb.scan scan_request
 
     result[:items].each do |item|
       items_to_delete.push({
@@ -25,6 +33,8 @@ def truncate(dynamodb, table)
     end
 
     last_key = result[:last_evaluated_key]
+
+    puts "More keys to get. Last key: #{last_key}"
   end
 
   while items_to_delete.length > 0 do
@@ -42,8 +52,22 @@ def truncate(dynamodb, table)
       }
     }
 
-    # should have exponential backoff / retry
-    dynamodb.batch_write_item request_hash
+    puts "DELETING ITEMS: #{request_items}"
+
+    # exponential backoff / retry
+    tries = 0
+    while tries < 3 do
+      begin
+        dynamodb.batch_write_item request_hash
+        break
+      rescue => e
+        puts "Caught an exception: #{e.class.name}"
+        sleep tries * tries
+      end
+    end
+
+    puts "ITEMS DELETED"
+
   end
 end
 
