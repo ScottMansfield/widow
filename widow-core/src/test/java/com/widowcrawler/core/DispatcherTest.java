@@ -13,16 +13,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import javax.inject.Provider;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author Scott Mansfield
  */
+@SuppressWarnings("unchecked")
 public class DispatcherTest {
 
     private Dispatcher dispatcher;
     private WorkerProvider workerProviderMock;
-    private ExecutorService executorServiceMock;
+    private ThreadPoolExecutor executorServiceMock;
 
     @Before
     public void before() throws Exception {
@@ -31,30 +34,35 @@ public class DispatcherTest {
         workerProviderMock = createMock(WorkerProvider.class);
         FieldUtils.writeField(this.dispatcher, "workerProvider", workerProviderMock, true);
 
-        executorServiceMock = createMock(ExecutorService.class);
+        executorServiceMock = createMock(ThreadPoolExecutor.class);
         FieldUtils.writeField(this.dispatcher, "executor", executorServiceMock, true);
     }
 
     @Test
-    public void dispatch_workExists_workDispatched() {
+    public void dispatch_workExists_workDispatched() throws Exception {
         // Arrange
         Worker workerMock = createMock(Worker.class);
 
         expect(workerProviderMock.get()).andReturn(workerMock);
-        expect(executorServiceMock.submit(eq(workerMock))).andReturn(null);
 
-        replay(workerMock, workerProviderMock, executorServiceMock);
+        BlockingQueue<Runnable> queueMock = createMock(BlockingQueue.class);
+        queueMock.put(anyObject(Runnable.class));
+        expectLastCall().once();
+
+        expect(executorServiceMock.getQueue()).andReturn(queueMock).once();
+
+        replay(workerMock, workerProviderMock, executorServiceMock, queueMock);
 
         // Act
         boolean retval = this.dispatcher.dispatch();
 
         // Assert
-        verify(workerMock, workerProviderMock, executorServiceMock);
+        verify(workerMock, workerProviderMock, executorServiceMock, queueMock);
         assertTrue(retval);
     }
 
     @Test
-    public void dispatch_exitWorkerProvided_dispatchExitsWithFalse() {
+    public void dispatch_exitWorkerProvided_dispatchExitsWithFalse() throws Exception {
         // Arrange
         expect(workerProviderMock.get()).andReturn(ExitWorkerProvider.EXIT_SIGNAL);
 

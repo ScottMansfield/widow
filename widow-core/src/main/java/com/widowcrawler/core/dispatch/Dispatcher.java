@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author Scott Mansfield
@@ -28,9 +26,9 @@ public class Dispatcher {
     WorkerProvider workerProvider;
 
     @Inject
-    ExecutorService executor;
+    ThreadPoolExecutor executor;
 
-    public boolean dispatch() {
+    public boolean dispatch() throws InterruptedException {
         logger.info("Pre workerProvider.get()");
         Worker worker = workerProvider.get();
         logger.info("Post workerProvider.get()");
@@ -39,7 +37,9 @@ public class Dispatcher {
             return false;
         }
 
-        executor.submit(worker);
+        logger.info("About to submit work to executor");
+        executor.getQueue().put(worker);
+        logger.info("Submitted work");
 
         return true;
     }

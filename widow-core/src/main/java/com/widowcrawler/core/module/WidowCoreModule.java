@@ -10,10 +10,7 @@ import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
 import com.widowcrawler.core.retry.Retry;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * @author Scott Mansfield
@@ -32,7 +29,14 @@ public class WidowCoreModule extends AbstractModule {
         bind(AmazonS3.class).toInstance(amazonS3Client);
 
         // TODO: Make number of threads in thread pool config
-        bind(ExecutorService.class).toInstance(Executors.newWorkStealingPool(10));
+        // 10 workers plus 2 queue management threads
+        // queue size the same as the worker threads
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(12, 12, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10));
+        threadPoolExecutor.prestartAllCoreThreads();
+
+        bind(ExecutorService.class).toInstance(threadPoolExecutor);
+        bind(ThreadPoolExecutor.class).toInstance(threadPoolExecutor);
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JodaModule());
