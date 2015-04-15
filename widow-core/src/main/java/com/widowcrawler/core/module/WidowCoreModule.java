@@ -31,7 +31,8 @@ public class WidowCoreModule extends AbstractModule {
         amazonS3Client.setRegion(Region.getRegion(Regions.US_WEST_2));
         bind(AmazonS3.class).toInstance(amazonS3Client);
 
-        bind(ExecutorService.class).toInstance(Executors.newCachedThreadPool());
+        // TODO: Make number of threads in thread pool config
+        bind(ExecutorService.class).toInstance(Executors.newWorkStealingPool(10));
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JodaModule());
