@@ -69,11 +69,6 @@ public class IndexWorker extends Worker {
                             }
                     ));
 
-            // TODO: Can we include type information for the attributes?
-            // and hack it up I guess?
-            attributeValueMap.put(PageAttribute.TIME_ACCESSED.toString(),
-                    new AttributeValue().withN(indexInput.getAttribute(PageAttribute.TIME_ACCESSED).toString()));
-
             PutItemRequest putItemRequest = new PutItemRequest()
                     .withTableName(TABLE_NAME)
                     .withItem(attributeValueMap)

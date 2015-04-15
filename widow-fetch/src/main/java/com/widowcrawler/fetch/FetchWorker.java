@@ -98,7 +98,7 @@ public class FetchWorker extends Worker {
 
             final PutObjectResult putObjectResult = retry.retry(() -> amazonS3Client.putObject(putObjectRequest));
 
-            logger.info("S3 put success. Object ID: " + pageContentRef);
+            logger.info("S3 put success. Object ID: " + pageContentRef + " | Content MD5: " + putObjectResult.getContentMd5());
 
             ParseInput parseInput = new ParseInput.Builder()
                     .withAttribute(PageAttribute.ORIGINAL_URL, this.target)
