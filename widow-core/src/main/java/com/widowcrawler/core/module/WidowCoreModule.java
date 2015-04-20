@@ -8,24 +8,34 @@ import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
-import com.widowcrawler.core.retry.Retry;
+import com.netflix.archaius.Config;
 
-import java.util.concurrent.*;
+import javax.inject.Inject;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Scott Mansfield
  */
 public class WidowCoreModule extends AbstractModule {
+
+    @Inject
+    private Config config;
+
     @Override
     protected void configure() {
 
+        Regions regionKey = config.get(Regions.class, "com.widowcrawler.aws.region");
+
         // TODO: Make region config
         AmazonSQSAsyncClient amazonSQSAsyncClient = new AmazonSQSAsyncClient();
-        amazonSQSAsyncClient.setRegion(Region.getRegion(Regions.US_WEST_2));
+        amazonSQSAsyncClient.setRegion(Region.getRegion(regionKey));
         bind(AmazonSQSAsyncClient.class).toInstance(amazonSQSAsyncClient);
 
         AmazonS3 amazonS3Client = new AmazonS3Client();
-        amazonS3Client.setRegion(Region.getRegion(Regions.US_WEST_2));
+        amazonS3Client.setRegion(Region.getRegion(regionKey));
         bind(AmazonS3.class).toInstance(amazonS3Client);
 
         // TODO: Make number of threads in thread pool config

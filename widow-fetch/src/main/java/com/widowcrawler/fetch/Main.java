@@ -9,6 +9,6 @@ import com.widowcrawler.fetch.module.WidowFetchModule;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        AppRunner.run(WidowFetchModule.class);
+        AppRunner.run(WidowFetchModule.class, "widow-fetch");
     }
 }

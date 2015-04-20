@@ -9,6 +9,6 @@ import com.widowcrawler.index.module.WidowIndexModule;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        AppRunner.run(WidowIndexModule.class);
+        AppRunner.run(WidowIndexModule.class, "widow-index");
     }
 }

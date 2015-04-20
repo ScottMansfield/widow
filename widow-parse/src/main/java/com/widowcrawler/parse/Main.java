@@ -9,6 +9,6 @@ import com.widowcrawler.parse.module.WidowParseModule;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        AppRunner.run(WidowParseModule.class);
+        AppRunner.run(WidowParseModule.class, "widow-parse");
     }
 }

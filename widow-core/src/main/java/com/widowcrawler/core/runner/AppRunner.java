@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.netflix.governator.guice.LifecycleInjector;
 import com.netflix.governator.lifecycle.LifecycleManager;
 import com.widowcrawler.core.dispatch.Dispatcher;
+import com.widowcrawler.core.module.ConfigModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,9 +16,10 @@ public class AppRunner {
 
     private static Logger logger = LoggerFactory.getLogger(AppRunner.class);
 
-    public static void run(Class<? extends AbstractModule> moduleClass) throws Exception {
+    public static void run(Class<? extends AbstractModule> moduleClass, String appName) throws Exception {
         Injector injector = LifecycleInjector.builder()
                 .withModuleClass(moduleClass)
+                .withBootstrapModule(new ConfigModule(appName))
                 .usingBasePackages("com.widowcrawler")
                 .build()
                 .createInjector();

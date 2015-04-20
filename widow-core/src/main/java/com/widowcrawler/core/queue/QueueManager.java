@@ -5,6 +5,7 @@ import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
+import com.netflix.archaius.Config;
 import com.netflix.governator.annotations.AutoBindSingleton;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -24,6 +25,11 @@ import java.util.concurrent.*;
 public class QueueManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public static final String QUEUE_NAMES_PROPERTY = "com.widowcrawler.QueueManager.queueNames";
+
+    @Inject
+    private Config config;
 
     @Inject
     private AmazonSQSAsyncClient sqsClient;
@@ -102,7 +108,8 @@ public class QueueManager {
         // still need a better story around credentials for the sqs client
         // Also should probably have a custom message type so we can support local in-memory queues as well as SQS
 
-        String queuesProperty = StringUtils.trim(System.getProperty("com.widowcrawler.queues"));
+        //String queuesProperty = StringUtils.trim(System.getProperty("com.widowcrawler.queues"));
+        String queuesProperty = StringUtils.trim(config.getString(QUEUE_NAMES_PROPERTY));
         Validate.notEmpty(queuesProperty);
 
         String[] queues = StringUtils.split(queuesProperty, "| ");
@@ -114,6 +121,8 @@ public class QueueManager {
         for (String queue : queues) {
             queue = StringUtils.trim(queue);
             String queueUrl;
+
+            logger.info("Initializing queue " + queue);
 
             try {
                 queueUrl = sqsClient.getQueueUrl(queue).getQueueUrl();

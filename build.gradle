@@ -17,12 +17,22 @@ subprojects {
         toolVersion = "0.7.4.201502262128"
     }
 
+    task copyCoreConfig(type: Copy) {
+        from "../widow-core/src/main/resources/"
+        into "build/resources/main"
+    }
+
+    jacocoTestReport.dependsOn test
+    build.dependsOn copyCoreConfig
+    build.dependsOn jacocoTestReport
+
     dependencies {
         // Dependency injection dependencies (injected)
         compile 'javax.inject:javax.inject:1'
         compile('com.netflix.governator:governator:1.3.3') {
             exclude group: 'asm'
             exclude group: 'org.apache.xbean'
+            exclude group: 'com.netflix.archaius'
         }
         compile 'org.ow2.asm:asm-all:5.0.3'
         compile 'org.apache.xbean:xbean-finder:4.1'
@@ -44,6 +54,11 @@ subprojects {
 
         // logging
         compile 'org.slf4j:slf4j-log4j12:1.7.12'
+
+        // Configuration
+        compile 'com.netflix.archaius:archaius-core:2.0.0-rc.6'
+        compile 'com.netflix.archaius:archaius-guice:2.0.0-rc.6'
+        compile 'commons-configuration:commons-configuration:1.10'
 
         // Test dependencies (unit test / mocking)
         testCompile 'junit:junit:4.12'
