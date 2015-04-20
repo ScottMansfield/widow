@@ -22,10 +22,17 @@ def empty(s3, bucket)
     end
 
     if response[:is_truncated]
-      marker = response[:next_marker]
+        if response[:next_marker]
+          marker = response[:next_marker]
+        else
+          marker = keys[-1]
+        end
     else
      continue = false
     end
+
+    puts continue
+    puts marker
   end
 
   while keys.length > 0 do
