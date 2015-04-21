@@ -2,6 +2,7 @@ package com.widowcrawler.parse;
 
 import com.netflix.governator.annotations.AutoBindSingleton;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,10 @@ public class LinkNormalizer {
      * @return The normalized URI, or null if there was an error parsing the extracted URI.
      */
     public String normalize(String original, String extracted) {
-        // host && protocol only, for now
+
+        Validate.notBlank(original);
+        Validate.notNull(extracted);
+
         if (StringUtils.startsWith(extracted, JS_PREFIX)) {
             return null;
         }
@@ -44,17 +48,63 @@ public class LinkNormalizer {
         }
 
         UriBuilder retval = UriBuilder.fromUri(extractedUri);
+        boolean hasHost = StringUtils.isNotBlank(extractedUri.getHost());
+        boolean hasScheme = StringUtils.isNotBlank(extractedUri.getScheme());
 
-        if (StringUtils.isBlank(extractedUri.getScheme())) {
-            retval.scheme(originalUri.getScheme());
+        if (!hasHost) {
+            retval.host(originalUri.getHost());
+            String normalizedPath = normalizePath(originalUri.getPath(), extractedUri.getPath());
+            retval.replacePath(normalizedPath);
         }
 
-        if (StringUtils.isBlank(extractedUri.getHost())) {
-            retval.host(originalUri.getHost());
+        if (!hasScheme) {
+            retval.scheme(originalUri.getScheme());
         }
 
         retval.fragment("");
 
         return retval.toString();
+    }
+
+    private String normalizePath(String originalPath, String extractedPath) {
+
+        if (StringUtils.startsWith(extractedPath, "../")) {
+
+            originalPath = findPathDirectory(originalPath);
+
+            while (StringUtils.startsWith(extractedPath, "../") &&
+                    originalPath.length() > 0) {
+                originalPath = removePathChunkAtEnd(originalPath);
+                extractedPath = removePathChunkAtStart(extractedPath);
+            }
+        }
+
+        originalPath = StringUtils.stripEnd(originalPath, "/");
+        extractedPath = StringUtils.stripStart(extractedPath, "/");
+
+        return originalPath + "/" + extractedPath;
+    }
+
+    private String findPathDirectory(String path) {
+        int lastSlash = StringUtils.lastIndexOf(path, "/");
+
+        if (lastSlash == path.length() - 1) {
+            // already a directory
+            return path;
+        }
+
+        return removePathChunkAtEnd(path);
+    }
+
+    private String removePathChunkAtEnd(String path) {
+        path = StringUtils.stripEnd(path, "/");
+        int lastSlash = StringUtils.lastIndexOf(path, "/");
+        return StringUtils.substring(path, 0, lastSlash);
+    }
+
+    private String removePathChunkAtStart(String path) {
+        path = StringUtils.stripStart(path, "/");
+        int firstSlash = StringUtils.indexOf(path, "/");
+        return StringUtils.substring(path, firstSlash + 1, path.length());
     }
 }
