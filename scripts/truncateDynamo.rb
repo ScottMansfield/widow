@@ -56,13 +56,25 @@ def truncate(dynamodb, table)
 
     # exponential backoff / retry
     tries = 0
+    response = nil
+
     while tries < 3 do
       begin
-        dynamodb.batch_write_item request_hash
+        response = dynamodb.batch_write_item request_hash
         break
       rescue => e
         puts "Caught an exception: #{e.class.name}"
         sleep tries * tries
+      end
+    end
+
+    if response[:unprocessed_items] && response[:unprocessed_items][table]
+      response[:unprocessed_items][table].each do |item|
+        key = item[:delete_request][:key]
+
+        puts "Couldn't delete #{key}"
+
+        items_to_delete.push key
       end
     end
 
