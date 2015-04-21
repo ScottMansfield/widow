@@ -5,6 +5,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netflix.archaius.Config;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
@@ -34,11 +35,8 @@ public class FetchWorker extends Worker {
 
     private static final Logger logger = LoggerFactory.getLogger(FetchWorker.class);
 
-    // TODO: This really needs to be config
-    private static final String PARSE_QUEUE = "widow-parse";
-
-    // TODO: This really needs to be config
-    private static final String BUCKET_NAME = "widow-test";
+    private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
+    private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
 
     @Inject
     QueueManager queueManager;
@@ -88,8 +86,10 @@ public class FetchWorker extends Worker {
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentLength(pageBody.getBytes().length);
 
+            String bucketName = config.getString(BUCKET_NAME_CONFIG_KEY);
+
             PutObjectRequest putObjectRequest = new PutObjectRequest(
-                    BUCKET_NAME,
+                    bucketName,
                     pageContentRef,
                     new ByteArrayInputStream(pageBody.getBytes()),
                     objectMetadata);
@@ -109,7 +109,8 @@ public class FetchWorker extends Worker {
                     .withAttribute(PageAttribute.RESPONSE_SIZE, responseLength)
                     .build();
 
-            this.queueManager.enqueue(PARSE_QUEUE, objectMapper.writeValueAsString(parseInput));
+            String nextQueue = config.getString(NEXT_QUEUE_CONFIG_KEY);
+            this.queueManager.enqueue(nextQueue, objectMapper.writeValueAsString(parseInput));
 
             return true;
 

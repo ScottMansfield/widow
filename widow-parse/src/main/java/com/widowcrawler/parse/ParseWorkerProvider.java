@@ -23,9 +23,6 @@ public class ParseWorkerProvider extends WorkerProvider {
 
     private static Logger logger = LoggerFactory.getLogger(ParseWorkerProvider.class);
 
-    // TODO: this really ought to be config
-    private static final String PARSE_QUEUE = "widow-parse";
-
     @Inject
     ObjectMapper objectMapper;
 
@@ -38,12 +35,14 @@ public class ParseWorkerProvider extends WorkerProvider {
     @Override
     public Worker get() {
         try {
-            Message message = queueClient.nextMessage(PARSE_QUEUE);
+            String pullQueue = config.getString(QUEUE_NAME_CONFIG_KEY);
+
+            Message message = queueClient.nextMessage(pullQueue);
 
             ParseInput parseInput = objectMapper.readValue(message.getBody(), ParseInput.class);
 
             return seed.get().withInput(parseInput)
-                .withCallback(new QueueCleanupCallback(queueClient, PARSE_QUEUE, message.getReceiptHandle()));
+                .withCallback(new QueueCleanupCallback(queueClient, pullQueue, message.getReceiptHandle()));
 
         } catch(InterruptedException ex) {
             logger.info("Thread interrupted", ex);

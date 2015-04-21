@@ -33,13 +33,12 @@ public class ParseWorker extends Worker {
 
     private static final Logger logger = LoggerFactory.getLogger(ParseWorker.class);
 
+    private static final String FETCH_QUEUE_NAME_CONFIG_KEY = "com.widowcrawler.queue.fetch";
+    private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
+    private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
+
     private static final Set<String> sentToFetch = new HashSet<>();
     private static final Map<String, Integer> cachedAssetSizes = new HashMap<>();
-
-    // TODO: This really needs to be configuration
-    private static final String FETCH_QUEUE = "widow-fetch";
-    private static final String INDEX_QUEUE = "widow-index";
-    private static final String BUCKET_NAME = "widow-test";
 
     @Inject
     ObjectMapper objectMapper;
@@ -72,8 +71,9 @@ public class ParseWorker extends Worker {
 
         try {
             // get page content from S3
+            String bucketName = config.getString(BUCKET_NAME_CONFIG_KEY);
             String pageContentRef = parseInput.getAttribute(PageAttribute.PAGE_CONTENT_REF).toString();
-            GetObjectRequest getObjectRequest = new GetObjectRequest(BUCKET_NAME, pageContentRef);
+            GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, pageContentRef);
 
             final S3Object s3Object = retry(() -> amazonS3Client.getObject(getObjectRequest));
 
@@ -145,8 +145,10 @@ public class ParseWorker extends Worker {
 
             // TODO: insert whatever custom parsing here
 
-            queueManager.enqueue(INDEX_QUEUE, objectMapper.writeValueAsString(builder.build()));
+            String nextQueue = config.getString(NEXT_QUEUE_CONFIG_KEY);
+            queueManager.enqueue(nextQueue, objectMapper.writeValueAsString(builder.build()));
 
+            String fetchQueue = config.getString(FETCH_QUEUE_NAME_CONFIG_KEY);
             outLinks.stream()
                     .map((link) -> linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link))
                     .filter(StringUtils::isNotBlank)
@@ -156,7 +158,7 @@ public class ParseWorker extends Worker {
                         try {
                             logger.info("Enqueuing fetch message for " + link);
                             FetchInput fetchInput = new FetchInput(link);
-                            queueManager.enqueue(FETCH_QUEUE, objectMapper.writeValueAsString(fetchInput));
+                            queueManager.enqueue(fetchQueue, objectMapper.writeValueAsString(fetchInput));
                             sentToFetch.add(link);
                         } catch (Exception ex) {
                             throw new RuntimeException(ex.getMessage(), ex);

@@ -21,28 +21,35 @@ import java.util.concurrent.TimeUnit;
  */
 public class WidowCoreModule extends AbstractModule {
 
+    private static final String REGION_CONFIG_KEY = "com.widowcrawler.aws.region";
+
+    private static final String NUM_THREADS_CONFIG_KEY = "com.widowcrawler.workers.threads";
+
+    private static final Integer QUEUE_MANAGER_HEADROOM = 2;
+
     @Inject
     private Config config;
 
     @Override
     protected void configure() {
 
-        Regions regionKey = config.get(Regions.class, "com.widowcrawler.aws.region");
+        Region region = Region.getRegion(config.get(Regions.class, REGION_CONFIG_KEY));
 
-        // TODO: Make region config
         AmazonSQSAsyncClient amazonSQSAsyncClient = new AmazonSQSAsyncClient();
-        amazonSQSAsyncClient.setRegion(Region.getRegion(regionKey));
+        amazonSQSAsyncClient.setRegion(region);
         bind(AmazonSQSAsyncClient.class).toInstance(amazonSQSAsyncClient);
 
         AmazonS3 amazonS3Client = new AmazonS3Client();
-        amazonS3Client.setRegion(Region.getRegion(regionKey));
+        amazonS3Client.setRegion(region);
         bind(AmazonS3.class).toInstance(amazonS3Client);
 
-        // TODO: Make number of threads in thread pool config
-        // 10 workers plus 2 queue management threads
-        // queue size the same as the worker threads
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(12, 12, 0L,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10));
+        // Thread pool setup. Include a queue the size of the pool.
+        // Always add headroom for admin in QueueManager
+        int numWorkers = config.get(Integer.class, NUM_THREADS_CONFIG_KEY);
+        int poolThreads = numWorkers + QUEUE_MANAGER_HEADROOM;
+
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(poolThreads, poolThreads, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(numWorkers));
         threadPoolExecutor.prestartAllCoreThreads();
 
         bind(ExecutorService.class).toInstance(threadPoolExecutor);

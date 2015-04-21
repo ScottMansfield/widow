@@ -1,12 +1,17 @@
 package com.widowcrawler.core.worker;
 
+import com.netflix.archaius.Config;
+
+import javax.inject.Inject;
 import java.util.function.BooleanSupplier;
 
 /**
  * @author Scott Mansfield
  */
 public abstract class Worker implements Runnable {
-    // so far, just a marker interface for DI type resolution
+
+    @Inject
+    protected Config config;
 
     private BooleanSupplier callback;
 

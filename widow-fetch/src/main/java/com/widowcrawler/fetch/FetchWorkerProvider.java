@@ -21,9 +21,7 @@ import java.io.IOException;
 @Singleton
 public class FetchWorkerProvider extends WorkerProvider {
 
-    private static final String QUEUE_NAME = "widow-fetch";
-
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger logger = LoggerFactory.getLogger(FetchWorkerProvider.class);
 
     @Inject
     ObjectMapper objectMapper;
@@ -42,20 +40,21 @@ public class FetchWorkerProvider extends WorkerProvider {
     @Override
     public Worker get() {
         try {
-            Message message = queueClient.nextMessage(QUEUE_NAME);
+            String pullQueue = config.getString(QUEUE_NAME_CONFIG_KEY);
+
+            Message message = queueClient.nextMessage(pullQueue);
 
             logger.info("Received message: " + message.getBody());
 
             FetchInput target = objectMapper.readValue(message.getBody(), FetchInput.class);
 
             return seed.get().withTarget(target.getUrl())
-                    .withCallback(new QueueCleanupCallback(queueClient, QUEUE_NAME, message.getReceiptHandle()));
+                    .withCallback(new QueueCleanupCallback(queueClient, pullQueue, message.getReceiptHandle()));
 
         } catch(InterruptedException ex) {
             logger.info("Thread interrupted", ex);
             Thread.currentThread().interrupt();
         } catch (IOException ex) {
-            // TODO: dead-letter queue?
             logger.error("Error parsing JSON", ex);
         }
 

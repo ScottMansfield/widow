@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.netflix.archaius.Config;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.worker.Worker;
@@ -25,8 +26,7 @@ public class IndexWorker extends Worker {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexWorker.class);
 
-    // TODO: I really ought to get working on a config system for this...
-    private static final String TABLE_NAME = "widow-test";
+    private static final String TABLE_NAME_CONFIG_KEY = "com.widowcrawler.table.name";
 
     @Inject
     AmazonDynamoDB dynamoDBClient;
@@ -67,8 +67,10 @@ public class IndexWorker extends Worker {
                             }
                     ));
 
+            String tableName = config.getString(TABLE_NAME_CONFIG_KEY);
+
             PutItemRequest putItemRequest = new PutItemRequest()
-                    .withTableName(TABLE_NAME)
+                    .withTableName(tableName)
                     .withItem(attributeValueMap)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
 

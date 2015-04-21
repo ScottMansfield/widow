@@ -177,8 +177,6 @@ public class QueueManager {
     }
 
     public void enqueue(String queueName, String messageBody) {
-        // TODO: split metadata and message body if too large
-
         SendMessageRequest sendMessageRequest = new SendMessageRequest(queueName, messageBody);
         Future<SendMessageResult> resultFuture = sqsClient.sendMessageAsync(sendMessageRequest);
 

@@ -2,7 +2,6 @@ package com.widowcrawler.index;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.widowcrawler.core.model.IndexInput;
-import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.worker.NoOpWorkerProvider;
 import com.widowcrawler.core.worker.QueueCleanupCallback;
@@ -22,9 +21,6 @@ public class IndexWorkerProvider extends WorkerProvider {
 
     private static Logger logger = LoggerFactory.getLogger(IndexWorkerProvider.class);
 
-    // TODO: this really ought to be config
-    private static final String INDEX_QUEUE = "widow-index";
-
     @Inject
     ObjectMapper objectMapper;
 
@@ -37,12 +33,14 @@ public class IndexWorkerProvider extends WorkerProvider {
     @Override
     public Worker get() {
         try {
-            Message message = queueClient.nextMessage(INDEX_QUEUE);
+            String pullQueue = config.getString(QUEUE_NAME_CONFIG_KEY);
+
+            Message message = queueClient.nextMessage(pullQueue);
 
             IndexInput indexInput = objectMapper.readValue(message.getBody(), IndexInput.class);
 
             return seed.get().withInput(indexInput)
-                    .withCallback(new QueueCleanupCallback(queueClient, INDEX_QUEUE, message.getReceiptHandle()));
+                    .withCallback(new QueueCleanupCallback(queueClient, pullQueue, message.getReceiptHandle()));
 
         } catch(InterruptedException ex) {
             logger.info("Thread interrupted", ex);
