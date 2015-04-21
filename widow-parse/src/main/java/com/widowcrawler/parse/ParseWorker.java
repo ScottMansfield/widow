@@ -122,9 +122,13 @@ public class ParseWorker extends Worker {
                 // it's hard to tell what's necessary to render above the fold, but we can add it all together....
 
                 String norm = linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link);
-                Integer assetSize = cachedAssetSizes.get(norm);
+                Integer assetSize = null;
 
-                if (assetSize == null) {
+                if (norm != null) {
+                    assetSize = cachedAssetSizes.get(norm);
+                }
+
+                if (assetSize == null && norm != null) {
                     logger.info("Normalized URI. Original: " + link + " | Normalized: " + norm);
 
                     final Response response = ClientBuilder.newClient().target(norm).request().buildGet().invoke();
@@ -138,7 +142,9 @@ public class ParseWorker extends Worker {
                     // TODO: Parse CSS and pull in any referenced images and external css
                 }
 
-                totalPageSize += assetSize;
+                if (assetSize != null) {
+                    totalPageSize += assetSize;
+                }
             }
 
             builder.withAttribute(PageAttribute.SIZE_WITH_ASSETS, totalPageSize);

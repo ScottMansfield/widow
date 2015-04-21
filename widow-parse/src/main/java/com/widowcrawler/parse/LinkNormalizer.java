@@ -17,6 +17,8 @@ public class LinkNormalizer {
 
     private static final Logger logger = LoggerFactory.getLogger(LinkNormalizer.class);
 
+    private static final String JS_PREFIX = "javascript:";
+
     /**
      * Normalizes a link extracted from a page given the page's original URI.
      *
@@ -26,7 +28,9 @@ public class LinkNormalizer {
      */
     public String normalize(String original, String extracted) {
         // host && protocol only, for now
-        // TODO: What about inline javascript in links?
+        if (StringUtils.startsWith(extracted, JS_PREFIX)) {
+            return null;
+        }
 
         URI originalUri = null;
         URI extractedUri = null;
