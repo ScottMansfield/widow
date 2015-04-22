@@ -17,11 +17,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.widowcrawler.core.retry.Retry.retry;
@@ -37,11 +42,14 @@ public class ParseWorker extends Worker {
     private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
     private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
 
-    private static final Set<String> sentToFetch = new HashSet<>();
-    private static final Map<String, Integer> cachedAssetSizes = new HashMap<>();
+    private static final String SENT_TO_FETCH_KEY_PREFIX = "sentToFetch:";
+    private static final String ASSET_SIZE_KEY_PREFIX = "assetSize:";
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    JedisPool jedisPool;
 
     @Inject
     QueueManager queueManager;
@@ -125,11 +133,11 @@ public class ParseWorker extends Worker {
                 Integer assetSize = null;
 
                 if (norm != null) {
-                    assetSize = cachedAssetSizes.get(norm);
+                    assetSize = getCachedAssetSize(norm);
                 }
 
                 if (assetSize == null && norm != null) {
-                    logger.info("Normalized URI. Original: " + link + " | Normalized: " + norm);
+                    //logger.info("Normalized URI. Original: " + link + " | Normalized: " + norm);
 
                     final Response response = ClientBuilder.newClient().target(norm).request().buildGet().invoke();
 
@@ -137,7 +145,7 @@ public class ParseWorker extends Worker {
                     // rather than rely on a server returning a Content-Length header
                     assetSize = response.readEntity(String.class).length();
 
-                    cachedAssetSizes.put(norm, assetSize);
+                    setCachedAssetSize(norm, assetSize);
 
                     // TODO: Parse CSS and pull in any referenced images and external css
                 }
@@ -159,13 +167,18 @@ public class ParseWorker extends Worker {
                     .map((link) -> linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link))
                     .filter(StringUtils::isNotBlank)
                     .forEach((link) -> {
-                        if (sentToFetch.contains(link)) return;
+                        if (alreadySentToFetch(link)) return;
 
                         try {
+                            // TODO: Investigate double messages
+                            //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
+                            //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
+                            //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: fab3ef38-ac44-41c7-b804-e5e3b6dcbf19
+                            //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: 949a7420-94cb-45ab-a11b-c36b28d4adc2
                             logger.info("Enqueuing fetch message for " + link);
                             FetchInput fetchInput = new FetchInput(link);
                             queueManager.enqueue(fetchQueue, objectMapper.writeValueAsString(fetchInput));
-                            sentToFetch.add(link);
+                            sentToFetch(link);
                         } catch (Exception ex) {
                             throw new RuntimeException(ex.getMessage(), ex);
                         }
@@ -185,5 +198,54 @@ public class ParseWorker extends Worker {
                 .map((elem) -> elem.attr(attrName))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toSet());
+    }
+
+    private boolean alreadySentToFetch(String link) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            String key = SENT_TO_FETCH_KEY_PREFIX + link;
+            return StringUtils.isNotBlank(jedis.get(key));
+        } catch (JedisConnectionException ex) {
+            logger.error("Couldn't write to cache", ex);
+            return false;
+        }
+    }
+
+    private void sentToFetch(String link) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            String key = SENT_TO_FETCH_KEY_PREFIX + link;
+            jedis.set(key, "true");
+        } catch (JedisConnectionException ex) {
+            logger.error("Couldn't read from cache", ex);
+        }
+    }
+
+    private Integer getCachedAssetSize(String link) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            String key = ASSET_SIZE_KEY_PREFIX + link;
+            String cachedValue = jedis.get(key);
+
+            if (StringUtils.isBlank(cachedValue)) {
+                return null;
+            }
+
+            return Integer.valueOf(cachedValue);
+
+        } catch (NumberFormatException ex) {
+            logger.error("Couldn't parse asset size. Asset: " + link, ex);
+            return null;
+        } catch (JedisConnectionException ex) {
+            logger.error("Couldn't read from cache", ex);
+            return null;
+        }
+    }
+
+    private void setCachedAssetSize(String link, Integer size) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            String key = ASSET_SIZE_KEY_PREFIX + link;
+            String value = size.toString();
+            jedis.set(key, value);
+        } catch (JedisConnectionException ex) {
+            logger.error("Couldn't read from cache", ex);
+        }
     }
 }

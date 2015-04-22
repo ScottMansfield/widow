@@ -11,6 +11,9 @@ dependencies {
 
     // for processing html
     compile 'org.jsoup:jsoup:1.8.1'
+
+    // caching of URLs and assets seen
+    compile 'redis.clients:jedis:2.7.0'
 }
 
 mainClassName = 'com.widowcrawler.parse.Main'
