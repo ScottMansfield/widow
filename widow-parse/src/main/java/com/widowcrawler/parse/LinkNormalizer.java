@@ -51,14 +51,17 @@ public class LinkNormalizer {
         boolean hasHost = StringUtils.isNotBlank(extractedUri.getHost());
         boolean hasScheme = StringUtils.isNotBlank(extractedUri.getScheme());
 
+        if (!hasScheme) {
+            retval.scheme(originalUri.getScheme());
+        }
+
         if (!hasHost) {
+            // moved to below, checking
+            // TODO: Seeing IllegalArgumentException: Schema specific part is opaque
+            // Maybe move this below the scheme instead of the other way around?
             retval.host(originalUri.getHost());
             String normalizedPath = normalizePath(originalUri.getPath(), extractedUri.getPath());
             retval.replacePath(normalizedPath);
-        }
-
-        if (!hasScheme) {
-            retval.scheme(originalUri.getScheme());
         }
 
         retval.fragment("");
@@ -68,9 +71,9 @@ public class LinkNormalizer {
 
     private String normalizePath(String originalPath, String extractedPath) {
 
-        if (StringUtils.startsWith(extractedPath, "../")) {
+        originalPath = findPathDirectory(originalPath);
 
-            originalPath = findPathDirectory(originalPath);
+        if (StringUtils.startsWith(extractedPath, "../")) {
 
             while (StringUtils.startsWith(extractedPath, "../") &&
                     originalPath.length() > 0) {

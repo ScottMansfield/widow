@@ -95,7 +95,7 @@ public class LinkNormalizerTest {
         String output = linkNormalizer.normalize(original, extracted);
 
         // Assert
-        assertEquals("http://www.foo.com/bar/quux", output);
+        assertEquals("http://www.foo.com/quux", output);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class LinkNormalizerTest {
         String output = linkNormalizer.normalize(original, extracted);
 
         // Assert
-        assertEquals("http://www.foo.com/bar/quux", output);
+        assertEquals("http://www.foo.com/quux", output);
     }
 
     @Test
