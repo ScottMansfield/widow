@@ -3,7 +3,6 @@ package com.widowcrawler.core.queue;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.netflix.archaius.Config;
 import com.netflix.governator.annotations.AutoBindSingleton;
@@ -13,10 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.inject.Inject;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author Scott Mansfield
@@ -37,39 +39,13 @@ public class QueueManager {
     @Inject
     private ExecutorService executorService;
 
+    @Inject
+    private Enqueuer enqueuer;
+
     private Map<String, LinkedBlockingQueue<Message>> messagesMap = null;
     private Map<String, String> queueUrls = null;
 
-    private Queue<Future<SendMessageResult>> enqueueActions = null;
-
-    private Runnable enququer = () -> {
-
-        //noinspection InfiniteLoopStatement
-        while (true) {
-            Future<SendMessageResult> future = null;
-
-            while (future == null) {
-                future = enqueueActions.poll();
-
-                if (future == null) {
-                    Thread.yield();
-                }
-            }
-
-            try {
-                SendMessageResult result = future.get();
-                logger.info("Message enqueued successfully. Message ID: " + result.getMessageId());
-
-            } catch (InterruptedException e) {
-                logger.error("Enqueuer interrupted", e);
-                Thread.currentThread().interrupt();
-
-            } catch (ExecutionException e) {
-                // eat the error, because wtf else
-                logger.error("Enqueueing failed", e.getCause());
-            }
-        }
-    };
+    private LinkedBlockingQueue<Future<SendMessageResult>> enqueueActions = null;
 
     private Runnable messagePoller = () -> {
         // if < 10 messages already in queue && no in-progress fetch, fetch
@@ -77,24 +53,24 @@ public class QueueManager {
 
         //noinspection InfiniteLoopStatement
         while (true) {
-            for (Map.Entry<String, String> entry : queueUrls.entrySet()) {
-                String queueName = entry.getKey();
-                String queueUrl = entry.getValue();
+            //queueUrls.entrySet().forEach(entry -> logger.info("Key: " + entry.getKey() + " | Value: " + entry.getValue()));
+            //System.out.println("\"Jia you\" - darongyi");
+
+            queueUrls.keySet().forEach(queueName -> {
+                String queueUrl = queueUrls.get(queueName);
 
                 if (messagesMap.get(queueName).size() < 1) {
                     // pull new messages in batches with long-polling enabled
                     ReceiveMessageRequest rmr = new ReceiveMessageRequest(queueUrl)
                             .withMaxNumberOfMessages(10)
                             .withWaitTimeSeconds(10);
-                    List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(rmr).getMessages();
 
-                    // Convert Amazon SQS message to our general message type
-                    for (com.amazonaws.services.sqs.model.Message message : messages) {
-                        Message genericMessage = new Message(message.getBody(), message.getMessageId(), message.getReceiptHandle());
+                    sqsClient.receiveMessage(rmr).getMessages().forEach(msg -> {
+                        Message genericMessage = new Message(msg.getBody(), msg.getMessageId(), msg.getReceiptHandle());
                         messagesMap.get(queueName).offer(genericMessage);
-                    }
+                    });
                 }
-            }
+            });
 
             Thread.yield();
         }
@@ -102,13 +78,8 @@ public class QueueManager {
 
     @PostConstruct
     public void postConstruct() {
-        // configuration ftw
         // for each configured queue set up the data structure to manage the current message batch
-        // async fetch messages
-        // still need a better story around credentials for the sqs client
-        // Also should probably have a custom message type so we can support local in-memory queues as well as SQS
 
-        //String queuesProperty = StringUtils.trim(System.getProperty("com.widowcrawler.queues"));
         String queuesProperty = StringUtils.trim(config.getString(QUEUE_NAMES_PROPERTY));
         Validate.notEmpty(queuesProperty);
 
@@ -137,12 +108,8 @@ public class QueueManager {
         messagesMap = Collections.unmodifiableMap(tempMessagesMap);
         queueUrls = Collections.unmodifiableMap(tempQueueUrls);
 
-        // And finally initialize the enqueue actions pending
-        enqueueActions = new ConcurrentLinkedQueue<>();
-
-        // Start the async operations
+        // Start the async operation
         executorService.submit(messagePoller);
-        executorService.submit(enququer);
     }
 
     /**
@@ -177,9 +144,6 @@ public class QueueManager {
     }
 
     public void enqueue(String queueName, String messageBody) {
-        SendMessageRequest sendMessageRequest = new SendMessageRequest(queueName, messageBody);
-        Future<SendMessageResult> resultFuture = sqsClient.sendMessageAsync(sendMessageRequest);
-
-        enqueueActions.add(resultFuture);
+        enqueuer.enqueue(queueName, messageBody);
     }
 }

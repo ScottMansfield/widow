@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
 import com.netflix.archaius.Config;
+import com.widowcrawler.core.queue.Enqueuer;
 
 import javax.inject.Inject;
 import java.util.concurrent.ExecutorService;
@@ -58,5 +59,7 @@ public class WidowCoreModule extends AbstractModule {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JodaModule());
         bind(ObjectMapper.class).toInstance(mapper);
+
+        bind(Enqueuer.class).asEagerSingleton();
     }
 }
