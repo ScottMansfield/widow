@@ -28,7 +28,12 @@ public class WidowParseModule extends AbstractModule {
 
         String cacheHostName = config.getString(CACHE_ENDPOINT_CONFIG_KEY);
         Integer port = config.getInteger(CACHE_PORT_CONFIG_KEY, 6379);
-        JedisPool pool = new JedisPool(new JedisPoolConfig(), cacheHostName);
+
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxTotal(100);
+        jedisPoolConfig.setMaxIdle(100);
+        jedisPoolConfig.setMinIdle(100);
+        JedisPool pool = new JedisPool(jedisPoolConfig, cacheHostName);
         bind(JedisPool.class).toInstance(pool);
 
         bind(WorkerProvider.class).to(ParseWorkerProvider.class).asEagerSingleton();
