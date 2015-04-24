@@ -1,6 +1,5 @@
 package com.widowcrawler.core.dispatch;
 
-import com.netflix.governator.annotations.AutoBindSingleton;
 import com.widowcrawler.core.worker.ExitWorkerProvider;
 import com.widowcrawler.core.worker.Worker;
 import com.widowcrawler.core.worker.WorkerProvider;
@@ -13,7 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * @author Scott Mansfield
  */
-@AutoBindSingleton
 public class Dispatcher {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());

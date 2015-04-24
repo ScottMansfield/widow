@@ -5,7 +5,6 @@ import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.netflix.archaius.Config;
-import com.netflix.governator.annotations.AutoBindSingleton;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -23,7 +22,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * @author Scott Mansfield
  */
-@AutoBindSingleton
 public class QueueManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
