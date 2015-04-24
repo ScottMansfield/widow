@@ -1,20 +1,21 @@
 package com.widowcrawler.core;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.GetQueueUrlResult;
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
-import com.amazonaws.services.sqs.model.ReceiptHandleIsInvalidException;
+import com.amazonaws.services.sqs.model.*;
 import com.netflix.archaius.Config;
+import com.widowcrawler.core.queue.Message;
 import com.widowcrawler.core.queue.QueueManager;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.easymock.Capture;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Scott Mansfield
@@ -47,8 +48,6 @@ public class QueueManagerTest {
 
     @Test(expected = NullPointerException.class)
     public void postConstruct_queuePropertyIsNull_NullPointerExceptionThrown() throws Exception {
-        System.out.println("postConstruct_queuePropertyIsNull_NullPointerExceptionThrown");
-
         // ARRANGE
         configMock = createMock(Config.class);
         expect(configMock.getString(QueueManager.QUEUE_NAMES_PROPERTY)).andReturn(null);
@@ -64,8 +63,6 @@ public class QueueManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void postConstruct_queuePropertyIsEmpty_IllegalArgumentExceptionThrown() throws Exception {
-        System.out.println("postConstruct_queuePropertyIsEmpty_IllegalArgumentExceptionThrown");
-
         // ARRANGE
         configMock = createMock(Config.class);
         expect(configMock.getString(QueueManager.QUEUE_NAMES_PROPERTY)).andReturn("");
@@ -81,8 +78,6 @@ public class QueueManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void postConstruct_queuePropertyIsWhitespace_IllegalArgumentExceptionThrown() throws Exception {
-        System.out.println("postConstruct_queuePropertyIsWhitespace_IllegalArgumentExceptionThrown");
-
         // ARRANGE
         configMock = createMock(Config.class);
         expect(configMock.getString(QueueManager.QUEUE_NAMES_PROPERTY)).andReturn("        ");
@@ -98,8 +93,6 @@ public class QueueManagerTest {
 
     @Test
     public void postConstruct_queuePropertyContainsNonExistentQueue_createsQueue() throws Exception {
-        System.out.println("postConstruct_queuePropertyContainsNonExistentQueue_createsQueue");
-
         // ARRANGE
         setupConfig();
 
@@ -126,10 +119,52 @@ public class QueueManagerTest {
         verify(configMock, sqsAsyncClientMock, executorServiceMock);
     }
 
+    @Test(timeout = 1000L)
+    public void nextMessage_queueExistsAndHasMessage_messageReturned() throws Exception {
+        // Arrange
+        setupConfig();
+        setupQueueClient();
+
+        expect(sqsAsyncClientMock.receiveMessage(anyObject(ReceiveMessageRequest.class)))
+                .andReturn(new ReceiveMessageResult().withMessages(
+                        new com.amazonaws.services.sqs.model.Message()
+                                .withBody("foo")
+                                .withMessageId("messageID")
+                                .withReceiptHandle("receiptHandle"))).once();
+
+        executorServiceMock = createMock(ExecutorService.class);
+
+        Capture<Runnable> capturedPoller = Capture.newInstance();
+        expect(executorServiceMock.submit(capture(capturedPoller))).andReturn(null).once();
+
+        FieldUtils.writeField(this.queueManager, "executorService", executorServiceMock, true);
+
+        replay(configMock, sqsAsyncClientMock, executorServiceMock);
+
+        this.queueManager.postConstruct();
+
+        // Act
+        // Set up a thread pool to run the poller runnable we've captured
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        final Future<?> submit = executorService.submit(capturedPoller.getValue());
+
+        // Give the poller a chance to pull the message
+        Thread.sleep(500);
+
+        // Clean up and stop execution
+        submit.cancel(true);
+        executorService.shutdownNow();
+
+        Message message = this.queueManager.nextMessage("bar");
+
+        // Assert
+        assertEquals("foo", message.getBody());
+        assertEquals("messageID", message.getMessageID());
+        assertEquals("receiptHandle", message.getReceiptHandle());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void nextMessage_queueDoesNotExist_IllegalArgumentExceptionThrown() throws Exception {
-        System.out.println("nextMessage_queueDoesNotExist_IllegalArgumentExceptionThrown");
-
         // ARRANGE
         setupStandard();
 
@@ -145,8 +180,6 @@ public class QueueManagerTest {
 
     @Test
     public void confirmReceipt_queueExistsValidHandle_messageDeleted() throws Exception {
-        System.out.println("confirmReceipt_queueExistsValidHandle_messageDeleted");
-
         // ARRANGE
         setupStandard();
 
@@ -165,8 +198,6 @@ public class QueueManagerTest {
 
     @Test(expected = ReceiptHandleIsInvalidException.class)
     public void confirmReceipt_queueExistsInvalidHandle_ReceiptHandleIsInvalidExceptionThrown() throws Exception {
-        System.out.println("confirmReceipt_queueExistsInvalidHandle_ReceiptHandleIsInvalidExceptionThrown");
-
         // ARRANGE
         setupStandard();
 
@@ -185,8 +216,6 @@ public class QueueManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void confirmReceipt_queueDoesNotExist_IllegalArgumentExceptionThrown() throws Exception {
-        System.out.println("confirmReceipt_queueDoesNotExist_IllegalArgumentExceptionThrown");
-
         // ARRANGE
         setupStandard();
 
@@ -208,7 +237,7 @@ public class QueueManagerTest {
     //////////////////
     private void setupStandard() throws Exception {
         setupConfig();
-        setupStandardQueueClient();
+        setupQueueClient();
         setupExecutorService();
     }
 
@@ -221,7 +250,7 @@ public class QueueManagerTest {
         FieldUtils.writeField(this.queueManager, "config", configMock, true);
     }
 
-    private void setupStandardQueueClient() throws Exception {
+    private void setupQueueClient() throws Exception {
         sqsAsyncClientMock = createMock(AmazonSQSAsyncClient.class);
 
         for (String queueName : new String[] { "foo", "bar", "baz"}) {
