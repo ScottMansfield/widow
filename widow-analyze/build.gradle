@@ -1,4 +1,13 @@
+apply plugin: 'application'
 
 dependencies {
     compile project(':widow-core')
+
+    compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:latest.release'
 }
+
+mainClassName = 'com.widowcrawler.analyze.Main'
+applicationDefaultJvmArgs = [
+        "-Xdebug",
+        "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=11340"
+]
