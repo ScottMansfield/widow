@@ -1,19 +1,24 @@
 package com.widowcrawler.analyze;
 
 import com.google.inject.Injector;
+import com.google.inject.servlet.GuiceFilter;
+import com.google.inject.servlet.GuiceServletContextListener;
 import com.netflix.governator.guice.LifecycleInjector;
-import com.netflix.governator.lifecycle.LifecycleManager;
 import com.widowcrawler.analyze.module.WidowAnalyzeModule;
-import com.widowcrawler.analyze.resources.TestResources;
+import com.widowcrawler.analyze.startup.WidowAnalyzeServletContextListener;
 import com.widowcrawler.core.module.ConfigModule;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.servlet.FilterRegistration;
+import org.glassfish.grizzly.servlet.ServletRegistration;
+import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import javax.servlet.DispatcherType;
 import java.net.URI;
+import java.util.EnumSet;
 
 /**
  * @author Scott Mansfield
@@ -28,27 +33,28 @@ public class Main {
     public static void main(String[] args) {
         try {
 
-            Injector injector = LifecycleInjector.builder()
-                    .withModuleClass(WidowAnalyzeModule.class)
-                    .withBootstrapModule(new ConfigModule("widow-analyze"))
-                    .usingBasePackages("com.widowcrawler")
-                    .build()
-                    .createInjector();
+            final HttpServer server = GrizzlyHttpServerFactory.createHttpServer(BASE_URI, false);
+            final WebappContext webappContext = new WebappContext("Widow analyze");
 
-            LifecycleManager lifecycleManager = injector.getInstance(LifecycleManager.class);
-            lifecycleManager.start();
+            webappContext.addListener(new WidowAnalyzeServletContextListener());
 
-            TestResources testResources = injector.getInstance(TestResources.class);
+            ServletRegistration servletRegistration = webappContext.addServlet("ServletContainer", ServletContainer.class);
+            servletRegistration.addMapping("/*");
+            servletRegistration.setInitParameter("javax.ws.rs.Application",
+                    "com.widowcrawler.analyze.startup.WidowAnalyzeResourceConfig");
 
-            final ResourceConfig resourceConfig = new ResourceConfig();
-            resourceConfig.registerInstances(testResources);
+            final FilterRegistration registration = webappContext.addFilter("GuiceFilter", GuiceFilter.class);
+            registration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), "/*");
 
-            final HttpServer server = GrizzlyHttpServerFactory.createHttpServer(BASE_URI, resourceConfig);
+            webappContext.deploy(server);
+
+            server.start();
 
             System.out.println(String.format("Application started.\nTry out %s%s\nHit enter to stop it...",
                     BASE_URI, ROOT_PATH));
 
-            while (System.in.read() != 32);
+            while(System.in.read() != 32);
+
             server.shutdownNow();
         } catch (Exception ex) {
             logger.error("Error: " + ex.getMessage(), ex);

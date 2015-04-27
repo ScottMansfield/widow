@@ -4,6 +4,15 @@ dependencies {
     compile project(':widow-core')
 
     compile 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:latest.release'
+    compile 'org.glassfish.grizzly:grizzly-http-servlet:latest.release'
+    compile 'org.glassfish.jersey.containers:jersey-container-servlet:latest.release'
+    compile 'javax.servlet:javax.servlet-api:latest.release'
+    compile 'org.glassfish.hk2:guice-bridge:latest.release'
+
+    compile('com.netflix.governator:governator-servlet:latest.release') {
+        exclude group: 'org.apache.xbean'
+        exclude group: 'com.netflix.archaius'
+    }
 }
 
 mainClassName = 'com.widowcrawler.analyze.Main'

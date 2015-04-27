@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.AbstractModule;
 import com.netflix.archaius.Config;
+import com.netflix.governator.annotations.Modules;
 import com.widowcrawler.core.dispatch.Dispatcher;
 import com.widowcrawler.core.queue.Enqueuer;
 import com.widowcrawler.core.queue.QueueManager;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Scott Mansfield
  */
+@Modules(include = {ObjectMapperModule.class})
 public class WidowCoreModule extends AbstractModule {
 
     private static final String REGION_CONFIG_KEY = "com.widowcrawler.aws.region";
@@ -57,10 +59,6 @@ public class WidowCoreModule extends AbstractModule {
 
         bind(ExecutorService.class).toInstance(threadPoolExecutor);
         bind(ThreadPoolExecutor.class).toInstance(threadPoolExecutor);
-
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JodaModule());
-        bind(ObjectMapper.class).toInstance(mapper);
 
         bind(Dispatcher.class).asEagerSingleton();
         bind(Enqueuer.class).asEagerSingleton();
