@@ -24,9 +24,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.widowcrawler.core.retry.Retry.retry;
@@ -41,9 +39,13 @@ public class ParseWorker extends Worker {
     private static final String FETCH_QUEUE_NAME_CONFIG_KEY = "com.widowcrawler.queue.fetch";
     private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
     private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
+    private static final String USE_REMOTE_CACHE_CONFIG_KEY = "com.widowcrawler.parse.use.remote.cache";
 
     private static final String SENT_TO_FETCH_KEY_PREFIX = "sentToFetch:";
     private static final String ASSET_SIZE_KEY_PREFIX = "assetSize:";
+
+    private static final Set<String> sentToFetch = new HashSet<>();
+    private static final Map<String, Integer> assetSizes = new HashMap<>();
 
     @Inject
     ObjectMapper objectMapper;
@@ -200,52 +202,72 @@ public class ParseWorker extends Worker {
                 .collect(Collectors.toSet());
     }
 
+    private boolean useRemoteCache() {
+        return config.getBoolean(USE_REMOTE_CACHE_CONFIG_KEY, false);
+    }
+
     private boolean alreadySentToFetch(String link) {
-        try(Jedis jedis = jedisPool.getResource()) {
-            String key = SENT_TO_FETCH_KEY_PREFIX + link;
-            return StringUtils.isNotBlank(jedis.get(key));
-        } catch (JedisConnectionException ex) {
-            logger.error("Couldn't write to cache", ex);
-            return false;
+        if (useRemoteCache()) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = SENT_TO_FETCH_KEY_PREFIX + link;
+                return StringUtils.isNotBlank(jedis.get(key));
+            } catch (JedisConnectionException ex) {
+                logger.error("Couldn't write to cache", ex);
+                return false;
+            }
+        } else {
+            return sentToFetch.contains(link);
         }
     }
 
     private void sentToFetch(String link) {
-        try(Jedis jedis = jedisPool.getResource()) {
-            String key = SENT_TO_FETCH_KEY_PREFIX + link;
-            jedis.set(key, "true");
-        } catch (JedisConnectionException ex) {
-            logger.error("Couldn't read from cache", ex);
+        if (useRemoteCache()) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = SENT_TO_FETCH_KEY_PREFIX + link;
+                jedis.set(key, "true");
+            } catch (JedisConnectionException ex) {
+                logger.error("Couldn't read from cache", ex);
+            }
+        } else {
+            sentToFetch.add(link);
         }
     }
 
     private Integer getCachedAssetSize(String link) {
-        try(Jedis jedis = jedisPool.getResource()) {
-            String key = ASSET_SIZE_KEY_PREFIX + link;
-            String cachedValue = jedis.get(key);
+        if (useRemoteCache()) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = ASSET_SIZE_KEY_PREFIX + link;
+                String cachedValue = jedis.get(key);
 
-            if (StringUtils.isBlank(cachedValue)) {
+                if (StringUtils.isBlank(cachedValue)) {
+                    return null;
+                }
+
+                return Integer.valueOf(cachedValue);
+
+            } catch (NumberFormatException ex) {
+                logger.error("Couldn't parse asset size. Asset: " + link, ex);
+                return null;
+            } catch (JedisConnectionException ex) {
+                logger.error("Couldn't read from cache", ex);
                 return null;
             }
-
-            return Integer.valueOf(cachedValue);
-
-        } catch (NumberFormatException ex) {
-            logger.error("Couldn't parse asset size. Asset: " + link, ex);
-            return null;
-        } catch (JedisConnectionException ex) {
-            logger.error("Couldn't read from cache", ex);
-            return null;
+        } else {
+            return assetSizes.get(link);
         }
     }
 
     private void setCachedAssetSize(String link, Integer size) {
-        try(Jedis jedis = jedisPool.getResource()) {
-            String key = ASSET_SIZE_KEY_PREFIX + link;
-            String value = size.toString();
-            jedis.set(key, value);
-        } catch (JedisConnectionException ex) {
-            logger.error("Couldn't read from cache", ex);
+        if (useRemoteCache()) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                String key = ASSET_SIZE_KEY_PREFIX + link;
+                String value = size.toString();
+                jedis.set(key, value);
+            } catch (JedisConnectionException ex) {
+                logger.error("Couldn't read from cache", ex);
+            }
+        } else {
+            assetSizes.put(link, size);
         }
     }
 }
