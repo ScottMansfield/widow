@@ -15,6 +15,30 @@ dependencies {
     }
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDir 'www'
+        }
+    }
+}
+
+task runBower(type: Exec) {
+    commandLine 'bower', 'install'
+}
+
+task runGulp(type: Exec) {
+    commandLine 'gulp'
+}
+
+jar.dependsOn runBower
+jar.dependsOn runGulp
+
+task buildAndRun {
+    dependsOn build
+    dependsOn run
+}
+
 mainClassName = 'com.widowcrawler.analyze.Main'
 applicationDefaultJvmArgs = [
         "-Xdebug",

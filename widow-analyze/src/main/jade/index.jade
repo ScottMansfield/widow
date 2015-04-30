@@ -1,0 +1,21 @@
+doctype html
+html
+    head
+        meta(charset="utf-8")
+
+        title Widow Analyze
+
+        // Angular libraries
+        script(src="lib/angular/angular.js")
+        script(src="lib/angular-bootstrap/ui-bootstrap-tpls.js")
+        script(src="lib/angular-ui-router/release/angular-ui-router.js")
+
+        // Controllers
+        script(src="js/controllers/module.js")
+        script(src="js/controllers/HomeController.js")
+
+        // Main app
+        script(src="js/app.js")
+
+body(ng-app="widow-analyze")
+    div(ui-view)

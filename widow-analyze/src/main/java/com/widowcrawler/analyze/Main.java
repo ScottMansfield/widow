@@ -7,6 +7,7 @@ import com.netflix.governator.guice.LifecycleInjector;
 import com.widowcrawler.analyze.module.WidowAnalyzeModule;
 import com.widowcrawler.analyze.startup.WidowAnalyzeServletContextListener;
 import com.widowcrawler.core.module.ConfigModule;
+import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.servlet.FilterRegistration;
 import org.glassfish.grizzly.servlet.ServletRegistration;
@@ -27,26 +28,34 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final URI BASE_URI = URI.create("http://localhost:8080/");
-    public static final String ROOT_PATH = "test";
+    private static final URI BASE_URI = URI.create("http://localhost:8080/REST/");
+    public static final String ROOT_PATH = "REST/test/ping";
 
     public static void main(String[] args) {
         try {
 
             final HttpServer server = GrizzlyHttpServerFactory.createHttpServer(BASE_URI, false);
+
+            // Creating a webapp context for the resources / DI container
             final WebappContext webappContext = new WebappContext("Widow analyze");
 
             webappContext.addListener(new WidowAnalyzeServletContextListener());
 
             ServletRegistration servletRegistration = webappContext.addServlet("ServletContainer", ServletContainer.class);
-            servletRegistration.addMapping("/*");
+            servletRegistration.addMapping("/REST/*");
             servletRegistration.setInitParameter("javax.ws.rs.Application",
                     "com.widowcrawler.analyze.startup.WidowAnalyzeResourceConfig");
 
             final FilterRegistration registration = webappContext.addFilter("GuiceFilter", GuiceFilter.class);
-            registration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), "/*");
+            registration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), "/REST/*");
 
             webappContext.deploy(server);
+
+            // static assets
+            CLStaticHttpHandler clStaticHttpHandler = new CLStaticHttpHandler(
+                    Main.class.getClassLoader(),
+                    "/", "/lib/", "/js/", "/css/", "/templates/");
+            server.getServerConfiguration().addHttpHandler(clStaticHttpHandler);
 
             server.start();
 

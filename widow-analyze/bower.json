@@ -1,0 +1,9 @@
+{
+    "name": "widow-analyze",
+    "devDependencies": {
+        "angular": "latest",
+        "angular-ui-router": "latest",
+        "angular-bootstrap": "latest",
+        "lodash": "latest"
+    }
+}

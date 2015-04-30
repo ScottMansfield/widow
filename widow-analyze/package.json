@@ -1,0 +1,23 @@
+{
+    "name": "widow-analyze",
+    "version": "0.1.0",
+    "description": "An analysis webapp for indexed data",
+    "repository": { },
+    "dependencies": { },
+    "devDependencies": {
+        "bower": "latest",
+        "coffee-script": "latest",
+        "del": "latest",
+        "gulp": "latest",
+        "gulp-coffee": "latest",
+        "gulp-jade": "latest",
+        "gulp-minify-css": "latest",
+        "gulp-minify-html": "latest",
+        "gulp-ng-annotate": "latest",
+        "gulp-rename": "latest",
+        "gulp-sass": "latest",
+        "gulp-sourcemaps": "latest",
+        "gulp-uglify": "latest",
+        "gulp-util": "latest"
+    }
+}
