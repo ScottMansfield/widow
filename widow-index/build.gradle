@@ -2,6 +2,9 @@ apply plugin: 'application'
 
 dependencies {
     compile project(':widow-core')
+
+    compile 'mysql:mysql-connector-java:latest.release'
+    compile 'commons-codec:commons-codec:latest.release'
 }
 
 mainClassName = 'com.widowcrawler.index.Main'
