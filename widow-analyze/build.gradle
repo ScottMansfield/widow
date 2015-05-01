@@ -31,8 +31,10 @@ task runGulp(type: Exec) {
     commandLine 'gulp'
 }
 
+// Force the assets to build and the jar to be rebuilt every time
 jar.dependsOn runBower
 jar.dependsOn runGulp
+jar.outputs.upToDateWhen { false }
 
 task buildAndRun {
     dependsOn build
