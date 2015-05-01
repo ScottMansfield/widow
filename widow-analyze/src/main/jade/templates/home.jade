@@ -1,2 +1,7 @@
 h1 Hello, world!
-h2(ng-bind="foo")
+
+.container
+    .col-xs-12(ng-repeat="page in pages")
+        p {{page.page}}
+        a(ui-sref="pageSummary({id: '{{page.page64}}' })")
+            | View summary for {{page.page}}

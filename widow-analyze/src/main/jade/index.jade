@@ -5,17 +5,29 @@ html
 
         title Widow Analyze
 
+        // External Libraries
+        script(src="lib/jquery/dist/jquery.js")
+        script(src="lib/bootstrap/dist/js/bootstrap.js")
+
         // Angular libraries
         script(src="lib/angular/angular.js")
         script(src="lib/angular-bootstrap/ui-bootstrap-tpls.js")
         script(src="lib/angular-ui-router/release/angular-ui-router.js")
 
         // Controllers
-        script(src="js/controllers/module.min.js")
+        script(src="js/controllers/module.js")
         script(src="js/controllers/HomeController.js")
+        script(src="js/controllers/PageSummaryController.js")
 
         // Main app
-        script(src="js/app.min.js")
+        script(src="js/app.js")
+
+        //////////
+        // CSS
+        //////////
+
+        // External libraries
+        link(rel="stylesheet", href="lib/bootstrap/dist/css/bootstrap.css")
 
 body(ng-app="widow-analyze")
     div(ui-view)

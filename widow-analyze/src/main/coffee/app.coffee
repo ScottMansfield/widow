@@ -7,4 +7,9 @@ app.config ($stateProvider, $urlRouterProvider) ->
     templateUrl: 'templates/home.html',
     controller: 'HomeController'
 
+  $stateProvider.state 'pageSummary',
+    url: '/page/:id',
+    templateUrl: 'templates/pageSummary.html',
+    controller: 'PageSummaryController'
+
   $urlRouterProvider.otherwise '/home'

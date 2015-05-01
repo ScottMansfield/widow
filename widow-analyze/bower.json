@@ -4,6 +4,8 @@
         "angular": "latest",
         "angular-ui-router": "latest",
         "angular-bootstrap": "latest",
-        "lodash": "latest"
+        "lodash": "latest",
+        "jquery": "latest",
+        "bootstrap": "latest"
     }
 }

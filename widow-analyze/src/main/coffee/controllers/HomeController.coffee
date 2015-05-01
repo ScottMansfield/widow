@@ -2,10 +2,15 @@ controllers = angular.module 'wa.controllers'
 
 controllers.controller 'HomeController', ($scope, $http) ->
 
-  $scope.foo = "default"
+  encode = (page) ->
+    btoa encodeURIComponent page
 
-  $http.get('REST/test/ping')
+  $scope.pages = [{page: "loading..."}]
+
+  $http.get('REST/pages')
     .success (data, status, headers, config) ->
-      $scope.foo = data
+      $scope.pages = ({page: x, page64: encode(x)} for x in data.pages)
+
     .error (data, status, headers, config) ->
-      $scope.foo = "Failure: status " + status
+      $scope.pages = ["Failure: status " + status]
+      console.log data
