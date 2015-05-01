@@ -1,12 +1,7 @@
 package com.widowcrawler.analyze;
 
-import com.google.inject.Injector;
 import com.google.inject.servlet.GuiceFilter;
-import com.google.inject.servlet.GuiceServletContextListener;
-import com.netflix.governator.guice.LifecycleInjector;
-import com.widowcrawler.analyze.module.WidowAnalyzeModule;
 import com.widowcrawler.analyze.startup.WidowAnalyzeServletContextListener;
-import com.widowcrawler.core.module.ConfigModule;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.servlet.FilterRegistration;
