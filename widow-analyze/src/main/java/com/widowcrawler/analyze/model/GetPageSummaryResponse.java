@@ -1,9 +1,6 @@
 package com.widowcrawler.analyze.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Scott Mansfield
@@ -11,20 +8,18 @@ import java.util.Map;
 public class GetPageSummaryResponse {
     boolean success;
     String message;
-    String tableName;
     Double capacityConsumed;
-    //Map<String, String>
+    Set<Long> timesAccessed;
 
-    @JsonCreator
     public GetPageSummaryResponse(
-            @JsonProperty("success")          boolean success,
-            @JsonProperty("message")          String message,
-            @JsonProperty("tableName")        String tableName,
-            @JsonProperty("capacityConsumed") Double capacityConsumed) {
+            boolean success,
+            String message,
+            Double capacityConsumed,
+            Set<Long> timesAccessed) {
         this.success = success;
         this.message = message;
-        this.tableName = tableName;
         this.capacityConsumed = capacityConsumed;
+        this.timesAccessed = timesAccessed;
     }
 
     public boolean getSuccess() {
@@ -35,11 +30,11 @@ public class GetPageSummaryResponse {
         return message;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public Double getCapacityConsumed() {
         return capacityConsumed;
+    }
+
+    public Set<Long> getTimesAccessed() {
+        return timesAccessed;
     }
 }
