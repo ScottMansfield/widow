@@ -83,7 +83,6 @@ public class IndexWorker extends Worker {
                                 case NUMBER:
                                     return new AttributeValue().withN(e.getValue().toString());
 
-                                case STRING:
                                 default:
                                     return new AttributeValue().withS(e.getValue().toString());
                             }

@@ -4,32 +4,30 @@ package com.widowcrawler.core.model;
  * @author Scott Mansfield
  */
 public enum PageAttribute {
-    ORIGINAL_URL,
+    ORIGINAL_URL(Type.STRING),
     STATUS_CODE(Type.NUMBER),
-    HEADERS,
-    PAGE_CONTENT_REF,
-    LOCALE,
+    HEADERS(Type.HASH),
+    PAGE_CONTENT_REF(Type.STRING),
+    LOCALE(Type.STRING),
     TIME_ACCESSED(Type.NUMBER),
     LOAD_TIME_MILLIS(Type.NUMBER),
     RESPONSE_SIZE(Type.NUMBER),
-    TITLE,
-    OUT_LINKS,
-    CSS_LINKS,
-    JS_LINKS,
-    IMG_LINKS,
+    TITLE(Type.STRING),
+    OUT_LINKS(Type.ARRAY),
+    CSS_LINKS(Type.ARRAY),
+    JS_LINKS(Type.ARRAY),
+    IMG_LINKS(Type.ARRAY),
     CONTENT_SIZE(Type.NUMBER),
     SIZE_WITH_ASSETS(Type.NUMBER);
 
     public static enum Type {
         STRING,
-        NUMBER
+        NUMBER,
+        HASH,
+        ARRAY
     }
 
     private Type type;
-
-    private PageAttribute() {
-        this.type = Type.STRING;
-    }
 
     private PageAttribute(Type type) {
         this.type = type;
