@@ -1,7 +1,9 @@
-h1 Hello, world!
+.row
+    h2 Pages in the index
 
-.container
-    .col-xs-12(ng-repeat="page in pages")
-        p {{page.page}}
+.row(ng-repeat="page in pages")
+    .col-xs-8
+        h4 {{page.page}}
+    .col-xs-4
         a(ui-sref="pageSummary({id: '{{page.page64}}' })")
-            | View summary for {{page.page}}
+            | Summary
