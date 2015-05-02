@@ -1,0 +1,9 @@
+.row
+    h2 Visit of {{pageUrl}} at {{visitTime}}
+
+accordion(close-others="false")
+    accordion-group(ng-repeat="(attribute, value) in visitInfo track by $index")
+        accordion-heading
+            i.glyphicon(ng-class="{'glyphicon-chevron-down': isOpen, 'glyphicon-chevron-right': !isOpen}")
+            | {{attribute}}
+        | {{value}}
