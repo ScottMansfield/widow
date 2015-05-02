@@ -1,3 +1,12 @@
-h1 Page Summary for {{pageUrl}}
-
-p {{pageSummary}}
+.row
+    .col-xs-12
+        h2 Page Summary for {{pageUrl}}
+.row
+    .col-xs-12
+        h4 Visit times:
+.row(ng-repeat="time in pageSummary.timesAccessed")
+    .col-xs-8
+        h4 {{time}}
+    .col-xs-4
+        a(ui-sref="pageVisit({id: '{{pageID}}', time: '{{time}}' })")
+            | Visit information
