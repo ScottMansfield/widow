@@ -107,7 +107,8 @@ public class PageResources {
             QueryRequest queryRequest = new QueryRequest()
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                     .withTableName(tableName)
-                    .withSelect(Select.ALL_ATTRIBUTES)
+                    .withSelect(Select.SPECIFIC_ATTRIBUTES)
+                    .withAttributesToGet(PageAttribute.TIME_ACCESSED.toString())
                     .withKeyConditions(conditionMap);
 
             QueryResult queryResult = dynamoDB.query(queryRequest);
