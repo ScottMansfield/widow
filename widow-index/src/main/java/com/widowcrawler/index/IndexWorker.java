@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.archaius.Config;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
@@ -38,6 +39,9 @@ public class IndexWorker extends Worker {
 
     @Inject
     AmazonDynamoDB dynamoDBClient;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Inject
     DataSource dataSource;
@@ -79,12 +83,27 @@ public class IndexWorker extends Worker {
                 .collect(Collectors.toMap(
                         e -> e.getKey().toString(),
                         e -> {
-                            switch (e.getKey().getType()) {
-                                case NUMBER:
-                                    return new AttributeValue().withN(e.getValue().toString());
+                            try {
+                                switch (e.getKey().getType()) {
+                                    case NUMBER:
+                                        return new AttributeValue().withN(e.getValue().toString());
 
-                                default:
-                                    return new AttributeValue().withS(e.getValue().toString());
+                                    default:
+                                        String serializedData = null;
+
+                                        // use objectMapper for everything but strings because it
+                                        // adds quotes to raw strings
+                                        if (e.getValue().getClass() != String.class) {
+                                            serializedData = objectMapper.writeValueAsString(e.getValue());
+                                        } else {
+                                            serializedData = (String) e.getValue();
+                                        }
+
+                                        return new AttributeValue().withS(serializedData);
+                                }
+                            } catch (Exception ex) {
+                                logger.error("Couldn't serialize data to index.", ex);
+                                return null;
                             }
                         }
                 ));
