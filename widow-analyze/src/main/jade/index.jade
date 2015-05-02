@@ -14,10 +14,15 @@ html
         script(src="lib/angular-bootstrap/ui-bootstrap-tpls.js")
         script(src="lib/angular-ui-router/release/angular-ui-router.js")
 
+        // Utils
+        script(src="js/util/module.js")
+        script(src="js/util/Encoding.js")
+
         // Controllers
         script(src="js/controllers/module.js")
         script(src="js/controllers/HomeController.js")
         script(src="js/controllers/PageSummaryController.js")
+        script(src="js/controllers/PageVisitController.js")
 
         // Main app
         script(src="js/app.js")
@@ -30,4 +35,13 @@ html
         link(rel="stylesheet", href="lib/bootstrap/dist/css/bootstrap.css")
 
 body(ng-app="widow-analyze")
-    div(ui-view)
+    nav.navbar.navbar-default.navbar-static-top
+        .container
+            .navbar-header
+                a.navbar-brand Widow Analysis
+            .navbar
+                ul.nav.navbar-nav
+                    li(ng-repeat="link in navlinks")
+                        a(ui-sref="{{link.sref}}")
+                            | {{link.text}}
+    div.container(ui-view)
