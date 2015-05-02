@@ -18,6 +18,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,8 +93,7 @@ public class PageResources {
             @PathParam("base64Page") String base64Page) {
 
         try {
-            // TODO: Figure out how to handle unicode characters here
-            String decoded = new String(Base64.getUrlDecoder().decode(base64Page));
+            String decoded = URLDecoder.decode(new String(Base64.getUrlDecoder().decode(base64Page)), "utf-8");
 
             String tableName = config.getString(DYNAMO_TABLE_NAME_CONFIG_KEY);
 
@@ -145,7 +145,7 @@ public class PageResources {
 
         try {
             // TODO: Figure out how to handle unicode characters here
-            String decoded = new String(Base64.getUrlDecoder().decode(base64Page));
+            String decoded = URLDecoder.decode(new String(Base64.getUrlDecoder().decode(base64Page)), "utf-8");
 
             String tableName = config.getString(DYNAMO_TABLE_NAME_CONFIG_KEY);
 
