@@ -1,9 +1,33 @@
 .row
-    h2 Visit of {{pageUrl}} at {{visitTime}}
-
-accordion(close-others="false")
-    accordion-group(ng-repeat="(attribute, value) in visitInfo track by $index")
-        accordion-heading
-            i.glyphicon(ng-class="{'glyphicon-chevron-down': isOpen, 'glyphicon-chevron-right': !isOpen}")
-            | {{attribute}}
-        | {{value}}
+    .col-xs-12
+        h2 Visit of {{pageUrl}}
+.row
+    .col-xs-12
+        h3.visit-time {{visitTime}}
+.row(ng-repeat="prop in visitProps")
+    .col-xs-4
+        h4 {{prop.display}}
+    .col-xs-8
+        | {{visitInfo[prop.propKey]}}
+.row
+    .col-xs-12
+        h4 Headers
+        .table-responsive
+            table.table.table-striped.headers
+                thead
+                    tr
+                        th Header
+                        th Value(s)
+                tbody
+                    tr(ng-repeat="(name, values) in visitInfo['HEADERS']")
+                        td {{name}}
+                        td: span(ng-repeat="value in values") {{value}}
+.row(ng-repeat="linkProp in linkProps")
+    .col-xs-12
+        .panel.panel-default
+            .panel-heading
+                h4.panel-title {{linkProp.display}}
+            .panel-collapse.collapse.in
+                .panel-body
+                    ul
+                        li(ng-repeat="link in visitInfo[linkProp.propKey] | orderBy: link") {{link}}

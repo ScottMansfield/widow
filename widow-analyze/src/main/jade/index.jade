@@ -33,15 +33,16 @@ html
 
         // External libraries
         link(rel="stylesheet", href="lib/bootstrap/dist/css/bootstrap.css")
+        link(rel="stylesheet", href="css/widow.css")
 
 body(ng-app="widow-analyze")
     nav.navbar.navbar-default.navbar-static-top
         .container
             .navbar-header
                 a.navbar-brand Widow Analysis
-            .navbar
+            .navbar-collapse.collapse
                 ul.nav.navbar-nav
                     li(ng-repeat="link in navlinks")
-                        a(ui-sref="{{link.sref}}")
+                        a(ui-sref="{{link.sref}}", ui-sref-active="active")
                             | {{link.text}}
     div.container(ui-view)

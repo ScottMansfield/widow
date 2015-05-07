@@ -27,7 +27,7 @@ gulp.task 'default', ['sass', 'coffee', 'jade']
 
 gulp.task 'sass', (done) ->
   gulp.src paths.srcSass
-    .pipe sass({errLogToConsole: true, sourceComments: 'normal'})
+    .pipe sass({errLogToConsole: true, indentedSyntax: true})
       .on 'error', gutil.log
     .pipe gulp.dest paths.destCSS
     .pipe minifyCSS keepSpecialComments: 0

@@ -1,9 +1,22 @@
 .row
-    h2 Pages in the index
-
-.row(ng-repeat="page in pages")
     .col-xs-8
-        h4 {{page.page}}
-    .col-xs-4
-        a(ui-sref="pageSummary({id: '{{page.page64}}' })")
-            | Summary
+        h2 Pages in the index
+    .col-xs-3
+        .pull-right {{status}}
+    .col-xs-1
+        button.btn.btn-default(ng-click="refresh()") Refresh
+
+.table-responsive
+    table.table.table-striped
+        thead
+            tr
+                th Page URL
+                th
+                    .pull-right Links
+        tbody
+            tr(ng-repeat="page in pages")
+                th {{page.page}}
+                th
+                    .pull-right
+                        a(ui-sref="pageSummary({id: '{{page.page64}}' })")
+                            | Summary
