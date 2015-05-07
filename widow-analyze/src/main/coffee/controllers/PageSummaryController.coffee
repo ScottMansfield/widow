@@ -9,7 +9,11 @@ controllers.controller 'PageSummaryController', ($scope, $stateParams, $http, En
 
   $http.get("REST/pages/#{$stateParams.id}")
     .success (data, status, headers, config) ->
-      $scope.pageSummary = data
+      $scope.timesAccessed = ({
+        display: new Date(Number(x)).toString(),
+        timestamp: x
+      } for x in data.timesAccessed)
+
     .error (data, status, headers, config) ->
       $scope.pageSummary = "Error. Code: #{status}"
       console.log data

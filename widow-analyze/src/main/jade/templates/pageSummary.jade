@@ -4,9 +4,9 @@
 .row
     .col-xs-12
         h4 Visit times:
-.row(ng-repeat="time in pageSummary.timesAccessed")
+.row(ng-repeat="time in timesAccessed")
     .col-xs-8
-        h4 {{time}}
+        h4 {{time.display}}
     .col-xs-4
-        a(ui-sref="pageVisit({id: '{{pageID}}', time: '{{time}}' })")
+        a(ui-sref="pageVisit({id: '{{pageID}}', time: '{{time.timestamp}}' })")
             | Visit information

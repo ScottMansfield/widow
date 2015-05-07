@@ -89,8 +89,7 @@ public class PageResources {
 
     @GET
     @Path("{base64Page}")
-    public Response summarizePage(
-            @PathParam("base64Page") String base64Page) {
+    public Response summarizePage(@PathParam("base64Page") String base64Page) {
 
         try {
             String decoded = URLDecoder.decode(new String(Base64.getUrlDecoder().decode(base64Page)), "utf-8");
