@@ -5,6 +5,7 @@ controllers.controller 'PageVisitController', ($scope, $stateParams, $http, Enco
   $scope.visitProps = [
     {propKey: 'TITLE',            display: 'Page Title'}
     {propKey: 'ORIGINAL_URL',     display: 'Original URL'}
+    {propKey: 'REFERRER',         display: 'Referrer'}
     {propKey: 'TIME_ACCESSED',    display: 'Time Accessed'}
     {propKey: 'STATUS_CODE',      display: 'Status Code'}
     {propKey: 'LOAD_TIME_MILLIS', display: 'Load Time (ms)'}

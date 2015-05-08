@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.archaius.Config;
+import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
@@ -47,19 +48,19 @@ public class FetchWorker extends Worker {
     @Inject
     AmazonS3 amazonS3Client;
 
-    private String target;
+    private FetchInput input;
 
     public FetchWorker() { }
 
-    public FetchWorker withTarget(String target) {
-        this.target = target;
+    public FetchWorker withInput(FetchInput input) {
+        this.input = input;
         return this;
     }
 
     @Override
     public boolean doWork() {
         try {
-            Invocation invocation = ClientBuilder.newClient().target(this.target).request().buildGet();
+            Invocation invocation = ClientBuilder.newClient().target(this.input.getUrl()).request().buildGet();
 
             // TODO: can I get more accurate timing from the response object?
             long startTime = System.nanoTime();
@@ -99,7 +100,8 @@ public class FetchWorker extends Worker {
             logger.info("S3 put success. Object ID: " + pageContentRef + " | Content MD5: " + putObjectResult.getContentMd5());
 
             ParseInput parseInput = new ParseInput.Builder()
-                    .withAttribute(PageAttribute.ORIGINAL_URL, this.target)
+                    .withAttribute(PageAttribute.ORIGINAL_URL, this.input.getUrl())
+                    .withAttribute(PageAttribute.REFERRER, this.input.getReferrer())
                     .withAttribute(PageAttribute.PAGE_CONTENT_REF, pageContentRef)
                     .withAttribute(PageAttribute.HEADERS, headerMap)
                     .withAttribute(PageAttribute.STATUS_CODE, response.getStatus())

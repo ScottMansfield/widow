@@ -5,6 +5,7 @@ package com.widowcrawler.core.model;
  */
 public enum PageAttribute {
     ORIGINAL_URL(Type.STRING),
+    REFERRER(Type.STRING),
     STATUS_CODE(Type.NUMBER),
     HEADERS(Type.HASH),
     PAGE_CONTENT_REF(Type.STRING),

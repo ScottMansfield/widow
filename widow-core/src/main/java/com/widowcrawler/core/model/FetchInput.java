@@ -10,13 +10,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class FetchInput {
     private String url;
+    private String referrer;
 
     @JsonCreator
-    public FetchInput(@JsonProperty("url") String url) {
+    public FetchInput(
+            @JsonProperty("url") String url,
+            @JsonProperty("referrer") String referrer) {
         this.url = url;
+        this.referrer = referrer;
     }
 
     public String getUrl() {
         return url;
+    }
+
+    public String getReferrer() {
+        return referrer;
     }
 }

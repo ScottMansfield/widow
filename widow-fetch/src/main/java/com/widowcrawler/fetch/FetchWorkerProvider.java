@@ -46,9 +46,9 @@ public class FetchWorkerProvider extends WorkerProvider {
 
             logger.info("Received message: " + message.getBody());
 
-            FetchInput target = objectMapper.readValue(message.getBody(), FetchInput.class);
+            FetchInput fetchInput = objectMapper.readValue(message.getBody(), FetchInput.class);
 
-            return seed.get().withTarget(target.getUrl())
+            return seed.get().withInput(fetchInput)
                     .withCallback(new QueueCleanupCallback(queueClient, pullQueue, message.getReceiptHandle()));
 
         } catch(InterruptedException ex) {

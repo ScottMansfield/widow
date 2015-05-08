@@ -178,7 +178,7 @@ public class ParseWorker extends Worker {
                             //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: fab3ef38-ac44-41c7-b804-e5e3b6dcbf19
                             //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: 949a7420-94cb-45ab-a11b-c36b28d4adc2
                             logger.info("Enqueuing fetch message for " + link);
-                            FetchInput fetchInput = new FetchInput(link);
+                            FetchInput fetchInput = new FetchInput(link, parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString());
                             queueManager.enqueue(fetchQueue, objectMapper.writeValueAsString(fetchInput));
                             sentToFetch(link);
                         } catch (Exception ex) {
