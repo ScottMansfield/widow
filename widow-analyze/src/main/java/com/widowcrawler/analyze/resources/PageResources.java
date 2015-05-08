@@ -48,7 +48,11 @@ public class PageResources {
             String tableName = config.getString(DYNAMO_TABLE_NAME_CONFIG_KEY);
 
             ScanRequest scanRequest = new ScanRequest()
-                    .withTableName(tableName);
+                    .withTableName(tableName)
+                    .withAttributesToGet(
+                            PageAttribute.ORIGINAL_URL.toString(),
+                            PageAttribute.TIME_ACCESSED.toString()
+                    );
 
             if (StringUtils.isNotBlank(startKey)) {
                 byte[] decodedLEK = Base64.getUrlDecoder().decode(startKey);
@@ -60,9 +64,24 @@ public class PageResources {
 
             final ScanResult scanResult = dynamoDB.scan(scanRequest);
 
-            final Set<String> pageList = scanResult.getItems().stream()
-                    .map(row -> row.get(PageAttribute.ORIGINAL_URL.toString()).getS())
-                    .collect(Collectors.toSet());
+            Map<String, List<Long>> pagesAndTimes = new HashMap<>();
+
+            // For each URL, extract the different times accessed
+            scanResult.getItems().forEach(
+                    row -> {
+                        String pageURL = row.get(PageAttribute.ORIGINAL_URL.toString()).getS();
+                        List<Long> timesList = null;
+
+                        if (pagesAndTimes.containsKey(pageURL)) {
+                            timesList = pagesAndTimes.get(pageURL);
+                        } else {
+                            timesList = new ArrayList<>();
+                        }
+
+                        timesList.add(Long.valueOf(row.get(PageAttribute.TIME_ACCESSED.toString()).getN()));
+                        pagesAndTimes.put(pageURL, timesList);
+                    }
+            );
 
             Double consumedCapacity = null;
 
@@ -77,7 +96,7 @@ public class PageResources {
                     "Page listing successful",
                     consumedCapacity,
                     null,
-                    pageList
+                    pagesAndTimes
             )).build();
 
         } catch (Exception ex) {

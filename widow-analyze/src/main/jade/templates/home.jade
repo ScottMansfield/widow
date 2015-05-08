@@ -11,12 +11,19 @@
         thead
             tr
                 th Page URL
+                th Times Accessed
                 th
                     .pull-right Links
         tbody
-            tr(ng-repeat="page in pages")
-                th {{page.page}}
+            tr(ng-repeat="(page, times) in pages | orderBy: page")
+                th {{page}}
+                th.visit-links: a(
+                    ng-repeat="time in times",
+                    ui-sref="pageVisit({id: '{{encode(page)}}', time: '{{time}}'})"
+                )
+                    | {{formatTime(time)}}
+                    br
                 th
                     .pull-right
-                        a(ui-sref="pageSummary({id: '{{page.page64}}' })")
+                        a(ui-sref="pageSummary({id: '{{encode(page)}}' })")
                             | Summary

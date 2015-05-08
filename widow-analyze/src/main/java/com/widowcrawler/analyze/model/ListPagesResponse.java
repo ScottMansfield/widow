@@ -1,5 +1,7 @@
 package com.widowcrawler.analyze.model;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -11,14 +13,14 @@ public class ListPagesResponse {
     private String message;
     private Double capacityConsumed;
     private String startKey;
-    private Set<String> pages;
+    private Map<String, List<Long>> pages;
 
     public ListPagesResponse(
             boolean success,
             String message,
             Double capacityConsumed,
             String startKey,
-            Set<String> pages) {
+            Map<String, List<Long>> pages) {
         this.success = success;
         this.message = message;
         this.capacityConsumed = capacityConsumed;
@@ -42,7 +44,7 @@ public class ListPagesResponse {
         return startKey;
     }
 
-    public Set<String> getPages() {
+    public Map<String, List<Long>> getPages() {
         return pages;
     }
 }
