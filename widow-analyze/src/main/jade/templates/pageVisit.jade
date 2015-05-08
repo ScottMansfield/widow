@@ -22,12 +22,12 @@
                     tr(ng-repeat="(name, values) in visitInfo['HEADERS']")
                         td {{name}}
                         td: span(ng-repeat="value in values") {{value}}
-.row(ng-repeat="linkProp in linkProps")
+.row(ng-repeat="linkProp in linkProps | orderBy: display")
     .col-xs-12
         .panel.panel-default
             .panel-heading
                 h4.panel-title {{linkProp.display}}
             .panel-collapse.collapse.in
-                .panel-body
+                .panel-body.page-links
                     ul
                         li(ng-repeat="link in visitInfo[linkProp.propKey] | orderBy: link") {{link}}
