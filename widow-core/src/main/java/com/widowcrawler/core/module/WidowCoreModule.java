@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Scott Mansfield
  */
-@Modules(include = {ObjectMapperModule.class})
+@Modules(include = {ObjectMapperModule.class, S3Module.class})
 public class WidowCoreModule extends AbstractModule {
 
     private static final String REGION_CONFIG_KEY = "com.widowcrawler.aws.region";
@@ -43,10 +43,6 @@ public class WidowCoreModule extends AbstractModule {
         AmazonSQSAsyncClient amazonSQSAsyncClient = new AmazonSQSAsyncClient();
         amazonSQSAsyncClient.setRegion(region);
         bind(AmazonSQSAsyncClient.class).toInstance(amazonSQSAsyncClient);
-
-        AmazonS3 amazonS3Client = new AmazonS3Client();
-        amazonS3Client.setRegion(region);
-        bind(AmazonS3.class).toInstance(amazonS3Client);
 
         // Thread pool setup. Include a queue the size of the pool.
         // Always add headroom for admin in QueueManager
