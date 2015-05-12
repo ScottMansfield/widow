@@ -12,18 +12,17 @@
             tr
                 th Page URL
                 th Times Accessed
-                th
-                    .pull-right Links
+                th: .pull-right Links
         tbody
             tr(ng-repeat="(page, times) in pages | orderBy: page")
-                th {{page}}
-                th.visit-links: a(
+                td {{page}}
+                td.visit-links: a(
                     ng-repeat="time in times",
                     ui-sref="pageVisit({id: '{{encode(page)}}', time: '{{time}}'})"
                 )
                     | {{formatTime(time)}}
                     br
-                th
+                td
                     .pull-right
                         a(ui-sref="pageSummary({id: '{{encode(page)}}' })")
                             | Summary
