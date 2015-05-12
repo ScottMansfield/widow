@@ -44,6 +44,11 @@ public class ParseWorker extends Worker {
     private static final String SENT_TO_FETCH_KEY_PREFIX = "sentToFetch:";
     private static final String ASSET_SIZE_KEY_PREFIX = "assetSize:";
 
+    private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+    private static final String IMAGE_CONTENT_TYPE_PREFIX = "image/";
+    private static final String NO_CONTENT_TYPE_KEY = "NO_CONTENT_TYPE";
+    private static final String EXCEPTION_KEY = "EXCEPTION";
+
     private static final Set<String> sentToFetch = new HashSet<>();
     private static final Map<String, Integer> assetSizes = new HashMap<>();
 
@@ -126,12 +131,12 @@ public class ParseWorker extends Worker {
 
             // retrieve all assets and calculate total page size
             int totalPageSize = pageContentSize;
-            List<String> pageLinks = new ArrayList<>(cssLinks.size() + jsLinks.size() + imgLinks.size());
-            pageLinks.addAll(cssLinks);
-            pageLinks.addAll(jsLinks);
-            pageLinks.addAll(imgLinks);
+            List<String> assetLinks = new ArrayList<>(cssLinks.size() + jsLinks.size() + imgLinks.size());
+            assetLinks.addAll(cssLinks);
+            assetLinks.addAll(jsLinks);
+            assetLinks.addAll(imgLinks);
 
-            for (String link : pageLinks) {
+            for (String link : assetLinks) {
                 // TODO: Metrics on all asset load times as well
                 // it's hard to tell what's necessary to render above the fold, but we can add it all together....
 
@@ -163,34 +168,72 @@ public class ParseWorker extends Worker {
 
             builder.withAttribute(PageAttribute.SIZE_WITH_ASSETS, totalPageSize);
 
+            // Collect all the outbound links by content type to filter out any unwanted things
+            // e.g. images
+            final Map<String, List<String>> linksByContentType = outLinks.parallelStream()
+                    .map((link) -> {
+                        String original = parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString();
+                        String normalized = linkNormalizer.normalize(original, link);
+                        //logger.info(String.format("Normalizing URL.\n\tOriginal: %s\n\tNormalized: %s", original, normalized));
+                        return normalized;
+                    })
+                    .filter(StringUtils::isNotBlank)
+                    .collect(Collectors.groupingBy(
+                            link -> {
+                                try {
+                                    final Response response = ClientBuilder.newClient().target(link).request().build("HEAD").invoke();
+                                    final String contentType = response.getStringHeaders().getFirst(CONTENT_TYPE_HEADER_KEY);
+
+                                    if (StringUtils.isNotBlank(contentType)) {
+                                        return contentType;
+                                    } else {
+                                        return NO_CONTENT_TYPE_KEY;
+                                    }
+
+                                } catch (Exception ex) {
+                                    logger.error("Could not get content type for " + link, ex);
+                                    //throw new RuntimeException(ex.getMessage(), ex);
+                                    return EXCEPTION_KEY;
+                                }
+                            }));
+
             // TODO: insert whatever custom parsing here
 
             String nextQueue = config.getString(NEXT_QUEUE_CONFIG_KEY);
             queueManager.enqueue(nextQueue, objectMapper.writeValueAsString(builder.build()));
 
             String fetchQueue = config.getString(FETCH_QUEUE_NAME_CONFIG_KEY);
-            outLinks.stream()
-                    .map((link) -> linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link))
-                    .filter(StringUtils::isNotBlank)
-                    .forEach((link) -> {
-                        if (alreadySentToFetch(link)) return;
 
-                        try {
-                            // TODO: Investigate double messages
-                            //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
-                            //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
-                            //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: fab3ef38-ac44-41c7-b804-e5e3b6dcbf19
-                            //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: 949a7420-94cb-45ab-a11b-c36b28d4adc2
-                            logger.info("Enqueuing fetch message for " + link);
-                            FetchInput fetchInput = new FetchInput(link, parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString());
-                            queueManager.enqueue(fetchQueue, objectMapper.writeValueAsString(fetchInput));
-                            sentToFetch(link);
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex.getMessage(), ex);
-                        }
-                    });
+            linksByContentType.entrySet().forEach(entry -> {
+
+                // Skip any links that just point to images or encountered an exception
+                // while performing a HEAD request.
+                if (StringUtils.startsWithIgnoreCase(entry.getKey(), IMAGE_CONTENT_TYPE_PREFIX) ||
+                        StringUtils.equals(entry.getKey(), EXCEPTION_KEY)) {
+                    return;
+                }
+
+                entry.getValue().forEach(link -> {
+                    if (alreadySentToFetch(link)) return;
+
+                    try {
+                        // TODO: Investigate double messages
+                        //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
+                        //INFO [com.widowcrawler.parse.ParseWorker:171] - Enqueuing fetch message for http://www.xoxide.com/radiator.html/casefans.html
+                        //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: fab3ef38-ac44-41c7-b804-e5e3b6dcbf19
+                        //INFO [com.widowcrawler.core.queue.QueueManager:61] - Message enqueued successfully. Message ID: 949a7420-94cb-45ab-a11b-c36b28d4adc2
+                        logger.info("Enqueuing fetch message for " + link);
+                        FetchInput fetchInput = new FetchInput(link, parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString());
+                        queueManager.enqueue(fetchQueue, objectMapper.writeValueAsString(fetchInput));
+                        sentToFetch(link);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex.getMessage(), ex);
+                    }
+                });
+            });
 
             return true;
+
 
         } catch (Exception ex) {
             logger.error("Parsing failed", ex);
