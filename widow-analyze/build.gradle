@@ -24,11 +24,11 @@ sourceSets {
 }
 
 task runBower(type: Exec) {
-    commandLine 'bower', 'install'
+    commandLine './node_modules/bower/bin/bower', 'install'
 }
 
 task runGulp(type: Exec) {
-    commandLine 'gulp'
+    commandLine './node_modules/gulp/bin/gulp.js'
 }
 
 // Force the assets to build and the jar to be rebuilt every time
