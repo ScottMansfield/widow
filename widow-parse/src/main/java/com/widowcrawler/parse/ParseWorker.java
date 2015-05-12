@@ -103,8 +103,12 @@ public class ParseWorker extends Worker {
                 builder.withAttribute(PageAttribute.TITLE, title);
             }
 
-            // get links
-            final Set<String> outLinks = collectLinks(document, "a", "href");
+            // get links without in-page anchor links
+            // Note: this breaks for angular apps but whatever
+            final Set<String> outLinks = collectLinks(document, "a", "href")
+                    .stream()
+                    .filter(link -> !StringUtils.startsWith(link, "#"))
+                    .collect(Collectors.toSet());
             builder.withAttribute(PageAttribute.OUT_LINKS, outLinks);
 
             // get asset links
