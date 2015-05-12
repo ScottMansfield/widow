@@ -8,6 +8,7 @@ dependencies {
     compile 'org.glassfish.jersey.containers:jersey-container-servlet:latest.release'
     compile 'javax.servlet:javax.servlet-api:latest.release'
     compile 'org.glassfish.hk2:guice-bridge:latest.release'
+    compile 'commons-io:commons-io:2.4'
 
     compile('com.netflix.governator:governator-servlet:latest.release') {
         exclude group: 'org.apache.xbean'
