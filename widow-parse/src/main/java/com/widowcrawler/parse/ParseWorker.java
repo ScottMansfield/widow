@@ -170,7 +170,7 @@ public class ParseWorker extends Worker {
 
             // Collect all the outbound links by content type to filter out any unwanted things
             // e.g. images
-            final Map<String, List<String>> linksByContentType = outLinks.parallelStream()
+            final Map<String, List<String>> linksByContentType = outLinks.stream()
                     .map((link) -> {
                         String original = parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString();
                         String normalized = linkNormalizer.normalize(original, link);
