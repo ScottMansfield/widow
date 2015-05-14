@@ -65,7 +65,7 @@ public class FetchWorker extends Worker {
             // TODO: can I get more accurate timing from the response object?
             long startTime = System.nanoTime();
             Response response = invocation.invoke();
-            double requestDuration = (System.nanoTime() - startTime) / 1000D;
+            double requestDuration = (System.nanoTime() - startTime) / 1_000_000D;
 
             // Massage the headers into a more usable form
             MultivaluedMap<String, String> stringHeaders = response.getStringHeaders();
