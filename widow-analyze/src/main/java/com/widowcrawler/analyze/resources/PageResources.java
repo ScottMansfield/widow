@@ -136,8 +136,7 @@ public class PageResources {
             QueryRequest queryRequest = new QueryRequest()
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                     .withTableName(tableName)
-                    .withSelect(Select.SPECIFIC_ATTRIBUTES)
-                    .withAttributesToGet(PageAttribute.TIME_ACCESSED.toString())
+                    .withSelect(Select.ALL_ATTRIBUTES)
                     .withKeyConditions(conditionMap);
 
             QueryResult queryResult = dynamoDB.query(queryRequest);
@@ -148,15 +147,15 @@ public class PageResources {
                 capacityConsumed = queryResult.getConsumedCapacity().getCapacityUnits();
             }
 
-            final Set<Long> timesAccessed = queryResult.getItems().stream()
-                    .map(row -> Long.valueOf(row.get(PageAttribute.TIME_ACCESSED.toString()).getN()))
-                    .collect(Collectors.toSet());
+            final List<Map<PageAttribute, Object>> visits = queryResult.getItems().stream()
+                    .map(this::getPageAttributeObjectMap)
+                    .collect(Collectors.toList());
 
             return Response.ok(new GetPageSummaryResponse(
                     true,
                     "Page summary successful",
                     capacityConsumed,
-                    timesAccessed
+                    visits
             )).build();
 
         } catch (Exception ex) {
@@ -202,32 +201,7 @@ public class PageResources {
                 capacityConsumed = queryResult.getConsumedCapacity().getCapacityUnits();
             }
 
-            final Map<PageAttribute, Object> attributeValueMap = queryResult.getItems().get(0)
-                    .entrySet().stream()
-                    .collect(Collectors.<Map.Entry<String, AttributeValue>, PageAttribute, Object>toMap(
-                            data -> PageAttribute.valueOf(data.getKey()),
-                            data -> {
-                                try {
-                                    AttributeValue av = data.getValue();
-                                    PageAttribute key = PageAttribute.valueOf(data.getKey());
-
-                                    switch (key.getType()) {
-                                        case NUMBER:
-                                            return Long.valueOf(av.getN());
-                                        case HASH:
-                                            return objectMapper.readValue(av.getS(), Map.class);
-                                        case ARRAY:
-                                            return objectMapper.readValue(av.getS(), List.class);
-                                        case STRING:
-                                        default:
-                                            return av.getS();
-                                    }
-                                } catch (Exception ex) {
-                                    logger.error("Error converting", ex);
-                                    return "";
-                                }
-                            }
-                    ));
+            final Map<PageAttribute, Object> attributeValueMap = getPageAttributeObjectMap(queryResult.getItems().get(0));
 
             return Response.ok(new PageVisitInfoResponse(
                     true,
@@ -265,5 +239,33 @@ public class PageResources {
 
     private String getDecodedURL(String base64Page) throws UnsupportedEncodingException {
         return URLDecoder.decode(new String(Base64.getUrlDecoder().decode(base64Page)), "utf-8");
+    }
+
+    private Map<PageAttribute, Object> getPageAttributeObjectMap(Map<String, AttributeValue> row) {
+        return row.entrySet().stream()
+                .collect(Collectors.<Map.Entry<String, AttributeValue>, PageAttribute, Object>toMap(
+                        data -> PageAttribute.valueOf(data.getKey()),
+                        data -> {
+                            try {
+                                AttributeValue av = data.getValue();
+                                PageAttribute key = PageAttribute.valueOf(data.getKey());
+
+                                switch (key.getType()) {
+                                    case NUMBER:
+                                        return Long.valueOf(av.getN());
+                                    case HASH:
+                                        return objectMapper.readValue(av.getS(), Map.class);
+                                    case ARRAY:
+                                        return objectMapper.readValue(av.getS(), List.class);
+                                    case STRING:
+                                    default:
+                                        return av.getS();
+                                }
+                            } catch (Exception ex) {
+                                logger.error("Error converting", ex);
+                                return "";
+                            }
+                        }
+                ));
     }
 }
