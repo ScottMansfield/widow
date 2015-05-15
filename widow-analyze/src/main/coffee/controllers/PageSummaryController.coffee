@@ -27,12 +27,6 @@ controllers.controller 'PageSummaryController', ($scope, $stateParams, $http, En
   ################
 
   doCharts = (visits) ->
-    # Load the Visualization API and the chart package.
-    google.load 'visualization', '1.0', {
-      'packages': ['line']
-      'callback': -> loadCallback()
-    }
-
     responseTimes = ([
       new Date(visit['TIME_ACCESSED'])
       visit['LOAD_TIME_MILLIS']
@@ -49,6 +43,12 @@ controllers.controller 'PageSummaryController', ($scope, $stateParams, $http, En
     extra = (vMax - vMin) * 0.2
     vMax += extra
     vMin -= extra
+
+    # Load the Visualization API and the chart package.
+    google.load 'visualization', '1.0', {
+      'packages': ['line']
+      'callback': -> loadCallback()
+    }
 
     # Set a callback to run when the Google Visualization API is loaded.
     loadCallback = ->
@@ -71,8 +71,12 @@ controllers.controller 'PageSummaryController', ($scope, $stateParams, $http, En
           minValue: vMin
           maxValue: vMax
         }
+        chartArea: {
+          backgroundColor: '#f0f0f0'
+        }
         width: 800
         height: 400
+        pointSize: 5
       }
 
       # Instantiate and draw our chart, passing in some options.
