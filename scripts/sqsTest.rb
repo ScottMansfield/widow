@@ -41,5 +41,7 @@ times.times do
     message_body: message
   )
   puts "sent"
+
+  sleep 30
 end
 
