@@ -6,7 +6,6 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.archaius.Config;
 import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.retry.RetryFailedException;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -85,7 +83,8 @@ public class IndexWorker extends Worker {
                         e -> {
                             try {
                                 switch (e.getKey().getType()) {
-                                    case NUMBER:
+                                    case LONG:
+                                    case DOUBLE:
                                         return new AttributeValue().withN(e.getValue().toString());
 
                                     default:

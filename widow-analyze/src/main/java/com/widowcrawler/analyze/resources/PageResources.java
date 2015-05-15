@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.archaius.Config;
 import com.widowcrawler.analyze.model.GetPageSummaryResponse;
@@ -68,7 +69,8 @@ public class PageResources {
             if (StringUtils.isNotBlank(startKey)) {
                 byte[] decodedLEK = Base64.getUrlDecoder().decode(startKey);
 
-                Map<String, AttributeValue> exclusiveStartKey = objectMapper.readValue(decodedLEK, Map.class);
+                Map<String, AttributeValue> exclusiveStartKey = objectMapper.readValue(decodedLEK,
+                        new TypeReference<Map<String, AttributeValue>>() { });
 
                 scanRequest.withExclusiveStartKey(exclusiveStartKey);
             }
@@ -100,13 +102,14 @@ public class PageResources {
                 consumedCapacity = scanResult.getConsumedCapacity().getCapacityUnits();
             }
 
-            // TODO: Set the startKey appropriately
+            String serializedStartKey = new String(Base64.getUrlEncoder().encode(
+                    objectMapper.writeValueAsString(scanResult.getLastEvaluatedKey()).getBytes()));
 
             return Response.ok(new ListPagesResponse(
                     true,
                     "Page listing successful",
                     consumedCapacity,
-                    null,
+                    serializedStartKey,
                     pagesAndTimes
             )).build();
 
