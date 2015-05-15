@@ -1,4 +1,14 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+    }
+}
+
 apply plugin:'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 dependencies {
     compile project(':widow-core')
@@ -6,6 +16,12 @@ dependencies {
     // For pulling the pages
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile 'org.glassfish.jersey.core:jersey-client:2.17'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.widowcrawler.fetch.Main'
+    }
 }
 
 mainClassName = 'com.widowcrawler.fetch.Main'

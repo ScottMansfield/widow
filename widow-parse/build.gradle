@@ -1,4 +1,14 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+    }
+}
+
 apply plugin:'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 dependencies {
     compile project(':widow-core')
