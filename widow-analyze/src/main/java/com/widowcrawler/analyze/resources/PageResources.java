@@ -254,8 +254,13 @@ public class PageResources {
                                 PageAttribute key = PageAttribute.valueOf(data.getKey());
 
                                 switch (key.getType()) {
-                                    case NUMBER:
+                                    case LONG:
                                         return Long.valueOf(av.getN());
+                                    case DOUBLE:
+                                        // TODO: First LOAD_TIME_MILLIS is *always* null, some others are as well
+                                        logger.info("About to parse " + key.toString() + " into Double: " + av.getS());
+                                        if (av.getS() == null) return -1D;
+                                        return Double.valueOf(av.getS());
                                     case HASH:
                                         return objectMapper.readValue(av.getS(), Map.class);
                                     case ARRAY:
