@@ -1,0 +1,21 @@
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+mkdir .aws
+
+scp -i ~/Downloads/sgmansfield_key_usw.pem ~/.aws/credentials ubuntu@52.24.81.55:/home/ubuntu/.aws/credentials
+scp -i ~/Downloads/sgmansfield_key_usw.pem ~/.aws/credentials ubuntu@52.24.149.154:/home/ubuntu/.aws/credentials
+scp -i ~/Downloads/sgmansfield_key_usw.pem ~/.aws/credentials ubuntu@52.24.218.198:/home/ubuntu/.aws/credentials
+
+scp -i ~/Downloads/sgmansfield_key_usw.pem widow-fetch/build/libs/widow-fetch-0.1-all.jar ubuntu@52.24.81.55:/home/ubuntu/widow-fetch.jar
+
+scp -i ~/Downloads/sgmansfield_key_usw.pem widow-parse/build/libs/widow-parse-0.1-all.jar ubuntu@52.24.149.154:/home/ubuntu/widow-parse.jar
+
+scp -i ~/Downloads/sgmansfield_key_usw.pem widow-index/build/libs/widow-index-0.1-all.jar ubuntu@52.24.218.198:/home/ubuntu/widow-index.jar
+
+
+java -cp widow-fetch.jar com.widowcrawler.fetch.Main
+
+java -cp widow-parse.jar com.widowcrawler.parse.Main
+
+java -cp widow-index.jar com.widowcrawler.index.Main
