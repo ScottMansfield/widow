@@ -80,6 +80,8 @@ def truncate(dynamodb, table)
 
     puts "ITEMS DELETED"
 
+    sleep 0.5
+
   end
 end
 
