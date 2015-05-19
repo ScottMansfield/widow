@@ -75,7 +75,6 @@ public class ParseWorker extends Worker {
     }
 
     // TODO: Major: this should be pluggable for different paths / formats / etc.
-    // think img/jpeg should not be parsed
     // feeds can be parsed in a different way (i.e. RSS XML) to pull out links
     // application/atom+xml
     //
@@ -110,23 +109,35 @@ public class ParseWorker extends Worker {
 
             // get links without in-page anchor links
             // Note: this breaks for angular apps but whatever
-            final Set<String> outLinks = collectLinks(document, "a", "href")
+            Set<String> outLinks = collectLinks(document, "a", "href")
                     .stream()
                     .filter(link -> !StringUtils.startsWith(link, "#"))
                     .collect(Collectors.toSet());
+            builder.withAttribute(PageAttribute.OUT_LINKS_RAW, outLinks);
+
+            outLinks = normalizeLinks(outLinks);
             builder.withAttribute(PageAttribute.OUT_LINKS, outLinks);
 
             // get asset links
             // link tags (href)
-            final Set<String> cssLinks = collectLinks(document, "link", "href");
+            Set<String> cssLinks = collectLinks(document, "link", "href");
+            builder.withAttribute(PageAttribute.CSS_LINKS_RAW, cssLinks);
+
+            cssLinks = normalizeLinks(cssLinks);
             builder.withAttribute(PageAttribute.CSS_LINKS, cssLinks);
 
             // script tags (src)
-            final Set<String> jsLinks = collectLinks(document, "script", "src");
+            Set<String> jsLinks = collectLinks(document, "script", "src");
+            builder.withAttribute(PageAttribute.JS_LINKS_RAW, jsLinks);
+
+            jsLinks = normalizeLinks(jsLinks);
             builder.withAttribute(PageAttribute.JS_LINKS, jsLinks);
 
             // img tags (src)
-            final Set<String> imgLinks = collectLinks(document, "img", "src");
+            Set<String> imgLinks = collectLinks(document, "img", "src");
+            builder.withAttribute(PageAttribute.IMG_LINKS_RAW, imgLinks);
+
+            imgLinks = normalizeLinks(imgLinks);
             builder.withAttribute(PageAttribute.IMG_LINKS, imgLinks);
 
             // retrieve all assets and calculate total page size
@@ -139,24 +150,18 @@ public class ParseWorker extends Worker {
             for (String link : assetLinks) {
                 // TODO: Metrics on all asset load times as well
                 // it's hard to tell what's necessary to render above the fold, but we can add it all together....
+                Integer assetSize = getCachedAssetSize(link);
 
-                String norm = linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link);
-                Integer assetSize = null;
-
-                if (norm != null) {
-                    assetSize = getCachedAssetSize(norm);
-                }
-
-                if (assetSize == null && norm != null) {
+                if (assetSize == null && link != null) {
                     //logger.info("Normalized URI. Original: " + link + " | Normalized: " + norm);
 
-                    final Response response = ClientBuilder.newClient().target(norm).request().buildGet().invoke();
+                    final Response response = ClientBuilder.newClient().target(link).request().buildGet().invoke();
 
                     // read the response into a String to guarantee we get a length
                     // rather than rely on a server returning a Content-Length header
                     assetSize = response.readEntity(String.class).length();
 
-                    setCachedAssetSize(norm, assetSize);
+                    setCachedAssetSize(link, assetSize);
 
                     // TODO: Parse CSS and pull in any referenced images and external css
                 }
@@ -171,12 +176,6 @@ public class ParseWorker extends Worker {
             // Collect all the outbound links by content type to filter out any unwanted things
             // e.g. images
             final Map<String, List<String>> linksByContentType = outLinks.stream()
-                    .map((link) -> {
-                        String original = parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString();
-                        String normalized = linkNormalizer.normalize(original, link);
-                        //logger.info(String.format("Normalizing URL.\n\tOriginal: %s\n\tNormalized: %s", original, normalized));
-                        return normalized;
-                    })
                     .filter(StringUtils::isNotBlank)
                     .collect(Collectors.groupingBy(
                             link -> {
@@ -249,8 +248,14 @@ public class ParseWorker extends Worker {
                 .collect(Collectors.toSet());
     }
 
+    private Set<String> normalizeLinks(Set<String> links) {
+        return links.stream()
+                .map(link -> linkNormalizer.normalize(parseInput.getAttribute(PageAttribute.ORIGINAL_URL).toString(), link))
+                .collect(Collectors.toSet());
+    }
+
     private boolean useRemoteCache() {
-        return config.getBoolean(USE_REMOTE_CACHE_CONFIG_KEY, false);
+        return config.getBoolean(USE_REMOTE_CACHE_CONFIG_KEY, true);
     }
 
     private boolean alreadySentToFetch(String link) {

@@ -15,9 +15,13 @@ public enum PageAttribute {
     RESPONSE_SIZE(Type.LONG),
     TITLE(Type.STRING),
     OUT_LINKS(Type.ARRAY),
+    OUT_LINKS_RAW(Type.ARRAY),
     CSS_LINKS(Type.ARRAY),
+    CSS_LINKS_RAW(Type.ARRAY),
     JS_LINKS(Type.ARRAY),
+    JS_LINKS_RAW(Type.ARRAY),
     IMG_LINKS(Type.ARRAY),
+    IMG_LINKS_RAW(Type.ARRAY),
     CONTENT_SIZE(Type.LONG),
     SIZE_WITH_ASSETS(Type.LONG);
 
