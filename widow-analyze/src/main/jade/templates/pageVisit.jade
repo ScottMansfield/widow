@@ -3,6 +3,10 @@
         h2 Visit of {{pageUrl}}
 .row
     .col-xs-12
+        .btn-group
+            button.btn.btn-default(ng-click="showRawContents()") Show raw page contents
+.row
+    .col-xs-12
         h3.visit-time {{visitTime}}
 .row(ng-repeat="prop in visitProps")
     .col-xs-4

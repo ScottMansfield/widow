@@ -1,0 +1,1 @@
+waModals = angular.module 'wa.modals', [ ]

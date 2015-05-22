@@ -5,20 +5,34 @@ html
 
         title Widow Analyze
 
+        // External libraries
+        link(rel="stylesheet", href="lib/bootstrap/dist/css/bootstrap.css")
+        link(rel="stylesheet", href="lib/highlightjs/styles/github.css")
+        link(rel="stylesheet", href="css/widow.css")
+
         // External Libraries
         script(src="lib/jquery/dist/jquery.js")
         script(src="lib/bootstrap/dist/js/bootstrap.js")
         script(src="lib/lodash/lodash.js")
+
+        script(src="lib/highlightjs/highlight.pack.js")
+
+        // GAH EXTERNAL DEPENDENCIES
         script(src="https://www.google.com/jsapi")
 
         // Angular libraries
         script(src="lib/angular/angular.js")
         script(src="lib/angular-bootstrap/ui-bootstrap-tpls.js")
         script(src="lib/angular-ui-router/release/angular-ui-router.js")
+        script(src="lib/angular-highlightjs/build/angular-highlightjs.js")
 
         // Utils
         script(src="js/util/module.js")
         script(src="js/util/Encoding.js")
+
+        // Modals
+        script(src="js/controllers/modals/module.js")
+        script(src="js/controllers/modals/RawContentModalController.js")
 
         // Controllers
         script(src="js/controllers/module.js")
@@ -28,14 +42,6 @@ html
 
         // Main app
         script(src="js/app.js")
-
-        //////////
-        // CSS
-        //////////
-
-        // External libraries
-        link(rel="stylesheet", href="lib/bootstrap/dist/css/bootstrap.css")
-        link(rel="stylesheet", href="css/widow.css")
 
 body(ng-app="widow-analyze")
     nav.navbar.navbar-default.navbar-static-top

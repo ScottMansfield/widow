@@ -1,6 +1,6 @@
 controllers = angular.module 'wa.controllers'
 
-controllers.controller 'PageVisitController', ($scope, $stateParams, $http, Encoding) ->
+controllers.controller 'PageVisitController', ($scope, $stateParams, $http, $modal, Encoding) ->
 
   $scope.visitProps = [
     {propKey: 'TITLE',            display: 'Page Title'}
@@ -29,6 +29,19 @@ controllers.controller 'PageVisitController', ($scope, $stateParams, $http, Enco
   $scope.visitInfo = { }
   $scope.pageUrl = Encoding.decode $stateParams.id
   $scope.visitTime = new Date(Number($stateParams.time)).toString()
+
+  $scope.showRawContents = ->
+
+    return unless $scope.visitInfo?.PAGE_CONTENT_REF
+
+    $modal.open {
+      templateUrl: 'templates/modals/rawContentModal.html'
+      controller: 'RawContentModalController'
+      size: 'lg',
+      resolve: {
+        contentID: -> $scope.visitInfo.PAGE_CONTENT_REF
+      }
+    }
 
   $http.get("REST/pages/#{$stateParams.id}/#{$stateParams.time}")
     .success (data, status, headers, config) ->

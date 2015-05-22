@@ -1,1 +1,1 @@
-angular.module 'wa.controllers', ['wa.util', 'ui.bootstrap']
+angular.module 'wa.controllers', ['wa.util', 'wa.modals', 'ui.bootstrap']
