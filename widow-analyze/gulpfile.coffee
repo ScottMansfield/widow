@@ -76,5 +76,5 @@ gulp.task 'clean', ->
 # Clean up bower libraries
 gulp.task 'clean-all', ['clean'], ->
   del [
-    'src/main/webapp/lib'
+    'www/lib'
   ]
