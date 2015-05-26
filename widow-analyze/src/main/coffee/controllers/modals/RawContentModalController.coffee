@@ -10,7 +10,7 @@ waModals.controller 'RawContentModalController', ($scope, $modalInstance, $http,
 
       # standardize newlines
       # tabs become 4 spaces because that's the right way to do tabs
-      rawContent = rawContent.replace(/(\r\n|\r|\n)/, "\r\n").replace(/\t/, "    ").replace("        ", "    ")
+      rawContent = rawContent.replace(/(\r\n|\r|\n)/g, "\r\n").replace(/        /g, "    ").replace(/\t/g, "    ")
       console.log("After: #{rawContent}")
 
       $scope.rawContent = rawContent
