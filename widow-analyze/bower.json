@@ -4,7 +4,6 @@
         "angular": "latest",
         "angular-ui-router": "latest",
         "angular-bootstrap": "latest",
-        "angular-highlightjs": "latest",
         "bootstrap": "latest",
         "highlightjs": "latest",
         "jquery": "latest",
