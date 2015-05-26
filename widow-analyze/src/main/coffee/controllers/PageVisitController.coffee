@@ -2,6 +2,9 @@ controllers = angular.module 'wa.controllers'
 
 controllers.controller 'PageVisitController', ($scope, $stateParams, $http, $modal, Encoding) ->
 
+  # defaults
+  $scope.visitInfo = null
+
   $scope.visitProps = [
     {propKey: 'TITLE',            display: 'Page Title'}
     {propKey: 'ORIGINAL_URL',     display: 'Original URL'}
@@ -37,7 +40,7 @@ controllers.controller 'PageVisitController', ($scope, $stateParams, $http, $mod
     $modal.open {
       templateUrl: 'templates/modals/rawContentModal.html'
       controller: 'RawContentModalController'
-      size: 'lg',
+      size: 'fit',
       resolve: {
         contentID: -> $scope.visitInfo.PAGE_CONTENT_REF
       }

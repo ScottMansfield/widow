@@ -4,7 +4,12 @@
 .row
     .col-xs-12
         .btn-group
-            button.btn.btn-default(ng-click="showRawContents()") Show raw page contents
+            button.btn.btn-default(
+                ng-click="showRawContents()",
+                ng-class="{hidden: visitInfo == null}",
+                style="margin: 5px 0 5px 0;"
+            )
+                | Show raw page contents
 .row
     .col-xs-12
         h3.visit-time {{visitTime}}
