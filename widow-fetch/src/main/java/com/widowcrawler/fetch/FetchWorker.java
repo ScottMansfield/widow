@@ -10,6 +10,7 @@ import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.util.DomainUtils;
 import com.widowcrawler.core.worker.Worker;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -38,6 +39,8 @@ public class FetchWorker extends Worker {
 
     private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
     private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
+    private static final String USE_BASE_DOMAIN_CONFIG_KEY = "com.widowcrawler.use.base.domain";
+    private static final String BASE_DOMAIN_CONFIG_KEY = "com.widowcrawler.base.domain";
 
     @Inject
     QueueManager queueManager;
@@ -60,6 +63,11 @@ public class FetchWorker extends Worker {
     @Override
     public boolean doWork() {
         try {
+            if (config.getBoolean(USE_BASE_DOMAIN_CONFIG_KEY) &&
+                !DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), this.input.getUrl())) {
+                return true;
+            }
+
             Invocation invocation = ClientBuilder.newClient().target(this.input.getUrl()).request().buildGet();
 
             // TODO: can I get more accurate timing from the response object?
