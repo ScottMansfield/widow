@@ -109,9 +109,15 @@ public class ParseWorker extends Worker {
 
             // get links without in-page anchor links
             // Note: this breaks for angular apps but whatever
-            Set<String> outLinks = collectLinks(document, "a", "href")
+            Set<String> outLinks = document.getElementsByTag("a")
                     .stream()
+                    // Ignore rel="nofollow" links
+                    .filter(elem -> !StringUtils.equalsIgnoreCase("nofollow", elem.attr("rel")))
+                    .map(elem -> elem.attr("href"))
+                    .filter(StringUtils::isNotBlank)
+                    // Remove javascript links or in-page anchors
                     .filter(link -> !StringUtils.startsWith(link, "#"))
+                    .filter(link -> !StringUtils.startsWith(link, "javascript:"))
                     .collect(Collectors.toSet());
             builder.withAttribute(PageAttribute.OUT_LINKS_RAW, outLinks);
 
