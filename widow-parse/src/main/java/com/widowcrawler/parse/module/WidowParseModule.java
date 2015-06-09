@@ -5,6 +5,7 @@ import com.netflix.archaius.Config;
 import com.netflix.governator.annotations.Modules;
 import com.widowcrawler.core.module.WidowCoreModule;
 import com.widowcrawler.core.worker.WorkerProvider;
+import com.widowcrawler.parse.LinkNormalizer;
 import com.widowcrawler.parse.ParseWorkerProvider;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -35,6 +36,8 @@ public class WidowParseModule extends AbstractModule {
         jedisPoolConfig.setMinIdle(100);
         JedisPool pool = new JedisPool(jedisPoolConfig, cacheHostName);
         bind(JedisPool.class).toInstance(pool);
+
+        bind(LinkNormalizer.class).asEagerSingleton();
 
         bind(WorkerProvider.class).to(ParseWorkerProvider.class).asEagerSingleton();
     }

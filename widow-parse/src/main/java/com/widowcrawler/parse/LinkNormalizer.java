@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 /**
  * @author Scott Mansfield
  */
-@AutoBindSingleton
 public class LinkNormalizer {
 
     private static final Logger logger = LoggerFactory.getLogger(LinkNormalizer.class);
