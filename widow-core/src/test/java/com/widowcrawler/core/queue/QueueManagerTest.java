@@ -1,4 +1,4 @@
-package com.widowcrawler.core;
+package com.widowcrawler.core.queue;
 
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient;
 import com.amazonaws.services.sqs.model.*;

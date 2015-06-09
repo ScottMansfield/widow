@@ -1,4 +1,4 @@
-package com.widowcrawler.core;
+package com.widowcrawler.core.dispatch;
 
 import com.widowcrawler.core.dispatch.Dispatcher;
 import com.widowcrawler.core.worker.ExitWorkerProvider;
