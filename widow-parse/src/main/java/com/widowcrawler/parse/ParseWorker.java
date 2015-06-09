@@ -9,6 +9,7 @@ import com.widowcrawler.core.model.IndexInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.util.DomainUtils;
 import com.widowcrawler.core.worker.Worker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,8 @@ public class ParseWorker extends Worker {
     private static final String NEXT_QUEUE_CONFIG_KEY = "com.widowcrawler.queue.next";
     private static final String BUCKET_NAME_CONFIG_KEY = "com.widowcrawler.bucket.name";
     private static final String USE_REMOTE_CACHE_CONFIG_KEY = "com.widowcrawler.parse.use.remote.cache";
+    private static final String USE_BASE_DOMAIN_CONFIG_KEY = "com.widowcrawler.use.base.domain";
+    private static final String BASE_DOMAIN_CONFIG_KEY = "com.widowcrawler.base.domain";
 
     private static final String SENT_TO_FETCH_KEY_PREFIX = "sentToFetch:";
     private static final String ASSET_SIZE_KEY_PREFIX = "assetSize:";
@@ -219,7 +222,11 @@ public class ParseWorker extends Worker {
                 }
 
                 entry.getValue().forEach(link -> {
-                    if (alreadySentToFetch(link)) return;
+                    if (alreadySentToFetch(link) ||
+                            (config.getBoolean(USE_BASE_DOMAIN_CONFIG_KEY) &&
+                             DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), link))) {
+                        return;
+                    }
 
                     try {
                         // TODO: Investigate double messages
