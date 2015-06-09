@@ -175,17 +175,4 @@ public class LinkNormalizerTest {
         // Assert
         assertEquals("http://www.foo.com/../quux", output);
     }
-
-    @Test
-    public void normalize_extractedIsJavascript_returnsNull() {
-        // Arrange
-        String original = "http://www.foo.com/";
-        String extracted = "javascript:alert('hello');";
-
-        // Act
-        String output = linkNormalizer.normalize(original, extracted);
-
-        // Assert
-        assertNull(output);
-    }
 }
