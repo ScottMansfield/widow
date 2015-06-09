@@ -224,7 +224,7 @@ public class ParseWorker extends Worker {
                 entry.getValue().forEach(link -> {
                     if (alreadySentToFetch(link) ||
                             (config.getBoolean(USE_BASE_DOMAIN_CONFIG_KEY) &&
-                             DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), link))) {
+                             !DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), link))) {
                         return;
                     }
 

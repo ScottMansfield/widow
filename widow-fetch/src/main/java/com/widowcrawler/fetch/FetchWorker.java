@@ -65,6 +65,9 @@ public class FetchWorker extends Worker {
         try {
             if (config.getBoolean(USE_BASE_DOMAIN_CONFIG_KEY) &&
                 !DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), this.input.getUrl())) {
+                logger.warn("Rejecting message because it goes not have the right base domain:\n" +
+                                "\tUrl: " + input.getUrl() + "\n" +
+                                "\tReferrer: " + input.getReferrer());
                 return true;
             }
 
