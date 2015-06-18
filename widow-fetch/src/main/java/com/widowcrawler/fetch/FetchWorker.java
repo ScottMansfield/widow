@@ -71,7 +71,11 @@ public class FetchWorker extends Worker {
                 return true;
             }
 
-            Invocation invocation = ClientBuilder.newClient().target(this.input.getUrl()).request().buildGet();
+            Invocation invocation = ClientBuilder.newClient()
+                    .target(this.input.getUrl())
+                    .request()
+                    .header("User-Agent", "Widow Crawler (http://widowcrawler.com)")
+                    .buildGet();
 
             // TODO: can I get more accurate timing from the response object?
             long startTime = System.nanoTime();
