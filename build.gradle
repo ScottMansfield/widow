@@ -41,6 +41,10 @@ subprojects {
         compile 'org.ow2.asm:asm-all:5.0.3'
         compile 'org.apache.xbean:xbean-finder:4.1'
 
+        // Sub-projects
+        compile 'com.widowcrawler:terminator:0.1.1'
+        compile 'com.widowcrawler:exo:0.1'
+
         // Jackson for JSON
         compile 'com.fasterxml.jackson.core:jackson-core:2.5.1'
         compile 'com.fasterxml.jackson.core:jackson-annotations:2.5.1'
