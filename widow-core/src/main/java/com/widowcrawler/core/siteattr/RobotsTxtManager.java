@@ -52,7 +52,7 @@ public class RobotsTxtManager {
                     if (!fetchesInProgress.containsKey(domain)) {
                         fetchFuture = new FutureTask<>(() -> {
                             logger.info("Fetching and parsing robots.txt for domain " + domain);
-                            RobotsTxt robotsTxt = Terminator.parse(makeRobotsTxtRL(domain));
+                            RobotsTxt robotsTxt = Terminator.parse(makeRobotsTxtURL(domain));
                             robotstxtByDomain.put(domain, robotsTxt);
                             return Boolean.TRUE;
                         });
@@ -81,7 +81,7 @@ public class RobotsTxtManager {
         }
     }
 
-    private static String makeRobotsTxtRL(String domain) {
+    private static String makeRobotsTxtURL(String domain) {
         return String.format("http://%s/robots.txt", domain);
     }
 }
