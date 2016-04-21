@@ -10,8 +10,12 @@ import com.widowcrawler.core.model.FetchInput;
 import com.widowcrawler.core.model.PageAttribute;
 import com.widowcrawler.core.model.ParseInput;
 import com.widowcrawler.core.queue.QueueManager;
+import com.widowcrawler.core.siteattr.RobotsTxtManager;
 import com.widowcrawler.core.util.DomainUtils;
 import com.widowcrawler.core.worker.Worker;
+import com.widowcrawler.terminator.model.RobotsTxt;
+import com.widowcrawler.terminator.model.RuleType;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +26,7 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +68,28 @@ public class FetchWorker extends Worker {
     @Override
     public boolean doWork() {
         try {
+
+            final RobotsTxt robotsTxt = RobotsTxtManager.getByDomain(new URL(input.getUrl()).getHost());
+
+            // FIXME: HORRIBLE, HACKY, NO-GOOD BADNESS
+            boolean allowed = robotsTxt.getRuleSets().get("*").stream().anyMatch(rule -> {
+                try {
+                    //logger.info("Rule} " + rule.getRuleType() + ": " + rule.getPathMatch());
+                    return rule.getRuleType() == RuleType.DISALLOW &&
+                            StringUtils.equalsIgnoreCase(rule.getPathMatch(), new URL(input.getUrl()).getPath());
+
+                } catch (Exception ex) {
+                    logger.error("Exception while evaluating robots.txt allowed-ness");
+                    return false;
+                }
+            });
+
+            if (!allowed) {
+                logger.info("URL " + input.getUrl() + " is not allowed by the robots.txt");
+                return true;
+            }
+            // END HORRIBLE, HACKY, NO-GOOD BADNESS
+
             if (config.getBoolean(USE_BASE_DOMAIN_CONFIG_KEY) &&
                 !DomainUtils.isBaseDomain(config.getString(BASE_DOMAIN_CONFIG_KEY), this.input.getUrl())) {
                 logger.warn("Rejecting message because it goes not have the right base domain:\n" +
